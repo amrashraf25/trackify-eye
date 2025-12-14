@@ -1,22 +1,26 @@
-import { BookOpen, Users, Stethoscope, AlertTriangle, Video, Settings, Shield } from "lucide-react";
+import { BookOpen, Users, Stethoscope, AlertTriangle, Video, Settings, Shield, LayoutDashboard } from "lucide-react";
 import { Button } from "./ui/button";
+import { NavLink, useLocation } from "react-router-dom";
 
 interface NavItem {
   icon: React.ElementType;
   label: string;
-  active?: boolean;
+  path: string;
 }
 
 const navItems: NavItem[] = [
-  { icon: BookOpen, label: "Courses" },
-  { icon: Users, label: "Students" },
-  { icon: Stethoscope, label: "Doctors" },
-  { icon: AlertTriangle, label: "Alerts Incidents", active: true },
-  { icon: Video, label: "Camera Records" },
-  { icon: Settings, label: "Setting" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: BookOpen, label: "Courses", path: "/courses" },
+  { icon: Users, label: "Students", path: "/students" },
+  { icon: Stethoscope, label: "Doctors", path: "/doctors" },
+  { icon: AlertTriangle, label: "Alerts Incidents", path: "/alerts" },
+  { icon: Video, label: "Camera Records", path: "/camera" },
+  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 const Sidebar = () => {
+  const location = useLocation();
+
   return (
     <aside className="w-64 min-h-screen bg-sidebar flex flex-col border-r border-border">
       {/* Logo */}
@@ -29,16 +33,20 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map((item) => (
-          <Button
-            key={item.label}
-            variant={item.active ? "sidebarActive" : "sidebar"}
-            className="px-4 py-3 h-auto text-sm font-medium"
-          >
-            <item.icon className="w-5 h-5 mr-3" />
-            {item.label}
-          </Button>
-        ))}
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <NavLink key={item.label} to={item.path}>
+              <Button
+                variant={isActive ? "sidebarActive" : "sidebar"}
+                className="w-full justify-start px-4 py-3 h-auto text-sm font-medium"
+              >
+                <item.icon className="w-5 h-5 mr-3" />
+                {item.label}
+              </Button>
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* Footer */}
