@@ -1,4 +1,4 @@
-import { BookOpen, Users, Stethoscope, AlertTriangle, Video, Settings, Shield, LayoutDashboard } from "lucide-react";
+import { BookOpen, Users, Stethoscope, AlertTriangle, Video, Settings, Shield, LayoutDashboard, BarChart3 } from "lucide-react";
 import { Button } from "./ui/button";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -15,6 +15,7 @@ const navItems: NavItem[] = [
   { icon: Stethoscope, label: "Doctors", path: "/doctors" },
   { icon: AlertTriangle, label: "Alerts Incidents", path: "/alerts" },
   { icon: Video, label: "Camera Records", path: "/camera" },
+  { icon: BarChart3, label: "Reports", path: "/reports" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
