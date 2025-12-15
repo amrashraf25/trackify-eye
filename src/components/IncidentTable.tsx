@@ -1,32 +1,74 @@
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
 import { Play } from "lucide-react";
+import { format } from "date-fns";
 
 interface IncidentRecord {
-  id: number;
-  videoClip: string;
-  incidentType: string;
-  roomNumber: number;
-  date: string;
+  id: string;
+  incident_type: string;
+  room_number: string;
+  detected_at: string;
+  video_clip_url: string | null;
+  severity: string;
+  status: string;
 }
-
-const incidentRecords: IncidentRecord[] = [
-  { id: 1, videoClip: "clip_001.mp4", incidentType: "Smoking", roomNumber: 101, date: "2024-12-14 09:23" },
-  { id: 2, videoClip: "clip_002.mp4", incidentType: "Aggression", roomNumber: 203, date: "2024-12-14 09:18" },
-  { id: 3, videoClip: "clip_003.mp4", incidentType: "Fight", roomNumber: 105, date: "2024-12-14 09:10" },
-  { id: 4, videoClip: "clip_004.mp4", incidentType: "Suspicious", roomNumber: 302, date: "2024-12-14 08:55" },
-  { id: 5, videoClip: "clip_005.mp4", incidentType: "Smoking", roomNumber: 401, date: "2024-12-14 08:42" },
-];
 
 interface IncidentTableProps {
   searchQuery: string;
 }
 
 const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
-  const filteredRecords = incidentRecords.filter((record) =>
-    record.incidentType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.videoClip.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    `room ${record.roomNumber}`.toLowerCase().includes(searchQuery.toLowerCase())
+  const queryClient = useQueryClient();
+
+  const { data: records = [], isLoading } = useQuery({
+    queryKey: ["incidents-table"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incidents")
+        .select("*")
+        .order("detected_at", { ascending: false });
+      if (error) throw error;
+      return data as IncidentRecord[];
+    },
+  });
+
+  // Real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("incidents-table")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "incidents",
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["incidents-table"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  const filteredRecords = records.filter((record) =>
+    record.incident_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    `room ${record.room_number}`.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Data</h2>
+        <div className="h-64 bg-card/50 rounded-lg border border-border animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -40,6 +82,7 @@ const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Incident Type</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Room Number</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Date</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
@@ -53,16 +96,31 @@ const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <Play className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-foreground">{record.videoClip}</span>
+                    <span className="text-sm text-foreground">
+                      {record.video_clip_url || `clip_${record.id.slice(0, 6)}.mp4`}
+                    </span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary/20 text-primary border border-primary/30">
-                    {record.incidentType}
+                    {record.incident_type}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm text-foreground">Room {record.roomNumber}</td>
-                <td className="px-4 py-3 text-sm text-muted-foreground">{record.date}</td>
+                <td className="px-4 py-3 text-sm text-foreground">Room {record.room_number}</td>
+                <td className="px-4 py-3 text-sm text-muted-foreground">
+                  {format(new Date(record.detected_at), "yyyy-MM-dd HH:mm")}
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                    record.status === "resolved" 
+                      ? "bg-green-500/20 text-green-400" 
+                      : record.status === "reviewing"
+                      ? "bg-yellow-500/20 text-yellow-400"
+                      : "bg-primary/20 text-primary"
+                  }`}>
+                    {record.status}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   <Button variant="view" size="sm">
                     View
@@ -73,7 +131,7 @@ const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
             
             {filteredRecords.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                   No records found matching your search.
                 </td>
               </tr>
