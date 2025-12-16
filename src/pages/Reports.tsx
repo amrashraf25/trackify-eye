@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import MainLayout from "@/components/layout/MainLayout";
@@ -8,10 +8,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, FileText, TrendingUp, Users, AlertTriangle, Calendar } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 import { toast } from "sonner";
+import { subDays, subMonths, subYears, isAfter, format } from "date-fns";
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState("week");
   const [reportType, setReportType] = useState("attendance");
+
+  // Calculate date range start
+  const getDateRangeStart = () => {
+    const now = new Date();
+    switch (dateRange) {
+      case "week":
+        return subDays(now, 7);
+      case "month":
+        return subMonths(now, 1);
+      case "quarter":
+        return subMonths(now, 3);
+      case "year":
+        return subYears(now, 1);
+      default:
+        return subDays(now, 7);
+    }
+  };
 
   const { data: incidents } = useQuery({
     queryKey: ["incidents-report"],
@@ -37,64 +55,122 @@ const Reports = () => {
     },
   });
 
-  // Mock data for charts (will use real data when available)
-  const attendanceTrends = [
-    { week: "Week 1", present: 92, absent: 5, late: 3 },
-    { week: "Week 2", present: 88, absent: 8, late: 4 },
-    { week: "Week 3", present: 95, absent: 3, late: 2 },
-    { week: "Week 4", present: 90, absent: 6, late: 4 },
-    { week: "Week 5", present: 93, absent: 4, late: 3 },
-    { week: "Week 6", present: 91, absent: 5, late: 4 },
-  ];
+  // Filter data based on date range
+  const filteredIncidents = useMemo(() => {
+    if (!incidents) return [];
+    const startDate = getDateRangeStart();
+    return incidents.filter((incident) => 
+      isAfter(new Date(incident.detected_at), startDate)
+    );
+  }, [incidents, dateRange]);
 
-  const incidentsByType = [
-    { name: "Smoking", value: 12, color: "hsl(var(--primary))" },
-    { name: "Aggression", value: 8, color: "hsl(var(--chart-2))" },
-    { name: "Fight", value: 5, color: "hsl(var(--chart-3))" },
-    { name: "Late Entry", value: 15, color: "hsl(var(--chart-4))" },
-    { name: "Other", value: 10, color: "hsl(var(--chart-5))" },
-  ];
+  const filteredAttendance = useMemo(() => {
+    if (!attendance) return [];
+    const startDate = getDateRangeStart();
+    return attendance.filter((record) => 
+      isAfter(new Date(record.date), startDate)
+    );
+  }, [attendance, dateRange]);
 
-  const monthlyIncidents = [
-    { month: "Jan", count: 8 },
-    { month: "Feb", count: 12 },
-    { month: "Mar", count: 6 },
-    { month: "Apr", count: 15 },
-    { month: "May", count: 9 },
-    { month: "Jun", count: 11 },
-  ];
+  // Get current data based on report type and filtered by date
+  const currentData = reportType === "attendance" ? filteredAttendance : filteredIncidents;
+
+  // Calculate attendance stats from filtered data
+  const attendanceStats = useMemo(() => {
+    if (!filteredAttendance.length) return { present: 0, absent: 0, late: 0 };
+    const present = filteredAttendance.filter(r => r.status === "present").length;
+    const absent = filteredAttendance.filter(r => r.status === "absent").length;
+    const late = filteredAttendance.filter(r => r.status === "late").length;
+    return { present, absent, late };
+  }, [filteredAttendance]);
+
+  // Calculate average attendance percentage
+  const avgAttendance = useMemo(() => {
+    const total = attendanceStats.present + attendanceStats.absent + attendanceStats.late;
+    if (total === 0) return "N/A";
+    return ((attendanceStats.present / total) * 100).toFixed(1) + "%";
+  }, [attendanceStats]);
+
+  // Group incidents by type for pie chart
+  const incidentsByType = useMemo(() => {
+    if (!filteredIncidents.length) return [];
+    const grouped = filteredIncidents.reduce((acc, incident) => {
+      acc[incident.incident_type] = (acc[incident.incident_type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const colors = ["hsl(var(--primary))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+    return Object.entries(grouped).map(([name, value], index) => ({
+      name,
+      value,
+      color: colors[index % colors.length],
+    }));
+  }, [filteredIncidents]);
+
+  // Group incidents by date for bar chart
+  const incidentsByDate = useMemo(() => {
+    if (!filteredIncidents.length) return [];
+    const grouped = filteredIncidents.reduce((acc, incident) => {
+      const date = format(new Date(incident.detected_at), "MMM dd");
+      acc[date] = (acc[date] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    return Object.entries(grouped)
+      .map(([date, count]) => ({ date, count }))
+      .slice(0, 10);
+  }, [filteredIncidents]);
+
+  // Attendance trends (weekly breakdown)
+  const attendanceTrends = useMemo(() => {
+    if (!filteredAttendance.length) {
+      return [
+        { week: "Week 1", present: 0, absent: 0, late: 0 },
+      ];
+    }
+    // Group by week or use actual data
+    return [
+      { week: "Present", present: attendanceStats.present, absent: 0, late: 0 },
+      { week: "Absent", present: 0, absent: attendanceStats.absent, late: 0 },
+      { week: "Late", present: 0, absent: 0, late: attendanceStats.late },
+    ];
+  }, [filteredAttendance, attendanceStats]);
+
+  const getDateRangeLabel = () => {
+    const now = new Date();
+    const start = getDateRangeStart();
+    return `${format(start, "MMM dd, yyyy")} - ${format(now, "MMM dd, yyyy")}`;
+  };
 
   const exportToCSV = () => {
-    const data = reportType === "attendance" ? attendance : incidents;
-    if (!data || data.length === 0) {
-      toast.error("No data to export");
+    if (!currentData || currentData.length === 0) {
+      toast.error("No data to export for selected date range");
       return;
     }
 
-    const headers = Object.keys(data[0]).join(",");
-    const rows = data.map((row) => Object.values(row).join(",")).join("\n");
+    const headers = Object.keys(currentData[0]).join(",");
+    const rows = currentData.map((row) => Object.values(row).join(",")).join("\n");
     const csv = `${headers}\n${rows}`;
     
     const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${reportType}-report-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `${reportType}-report-${dateRange}-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    toast.success("CSV exported successfully");
+    toast.success(`CSV exported successfully (${currentData.length} records)`);
   };
 
   const exportToPDF = () => {
-    // Create a printable version
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
       toast.error("Please allow popups to export PDF");
       return;
     }
 
-    const data = reportType === "attendance" ? attendance : incidents;
     const title = reportType === "attendance" ? "Attendance Report" : "Incidents Report";
+    const dateLabel = getDateRangeLabel();
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -110,21 +186,26 @@ const Reports = () => {
             tr:nth-child(even) { background-color: #f9f9f9; }
             .header { display: flex; justify-content: space-between; align-items: center; }
             .date { color: #666; }
+            .summary { margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 8px; }
           </style>
         </head>
         <body>
           <div class="header">
             <h1>Trackify - ${title}</h1>
-            <p class="date">Generated: ${new Date().toLocaleDateString()}</p>
+          </div>
+          <p class="date">Report Period: ${dateLabel}</p>
+          <p class="date">Generated: ${new Date().toLocaleDateString()}</p>
+          <div class="summary">
+            <strong>Total Records:</strong> ${currentData?.length || 0}
           </div>
           <table>
             <thead>
               <tr>
-                ${data && data.length > 0 ? Object.keys(data[0]).map((key) => `<th>${key}</th>`).join("") : ""}
+                ${currentData && currentData.length > 0 ? Object.keys(currentData[0]).map((key) => `<th>${key}</th>`).join("") : "<th>No data</th>"}
               </tr>
             </thead>
             <tbody>
-              ${data?.map((row) => `<tr>${Object.values(row).map((val) => `<td>${val}</td>`).join("")}</tr>`).join("") || ""}
+              ${currentData?.map((row) => `<tr>${Object.values(row).map((val) => `<td>${val}</td>`).join("")}</tr>`).join("") || "<tr><td>No records found for selected date range</td></tr>"}
             </tbody>
           </table>
         </body>
@@ -132,7 +213,7 @@ const Reports = () => {
     `);
     printWindow.document.close();
     printWindow.print();
-    toast.success("PDF export opened in new tab");
+    toast.success(`PDF export opened (${currentData?.length || 0} records)`);
   };
 
   return (
@@ -176,6 +257,11 @@ const Reports = () => {
           </div>
         </div>
 
+        {/* Date Range Display */}
+        <p className="text-sm text-muted-foreground">
+          Showing data for: <span className="font-medium text-foreground">{getDateRangeLabel()}</span>
+        </p>
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-card border-border">
@@ -185,8 +271,8 @@ const Reports = () => {
                   <Users className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Students</p>
-                  <p className="text-2xl font-bold text-foreground">1,247</p>
+                  <p className="text-sm text-muted-foreground">Attendance Records</p>
+                  <p className="text-2xl font-bold text-foreground">{filteredAttendance.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -200,7 +286,7 @@ const Reports = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Avg Attendance</p>
-                  <p className="text-2xl font-bold text-foreground">91.5%</p>
+                  <p className="text-2xl font-bold text-foreground">{avgAttendance}</p>
                 </div>
               </div>
             </CardContent>
@@ -214,7 +300,7 @@ const Reports = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Total Incidents</p>
-                  <p className="text-2xl font-bold text-foreground">{incidents?.length || 50}</p>
+                  <p className="text-2xl font-bold text-foreground">{filteredIncidents.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -240,11 +326,11 @@ const Reports = () => {
           {/* Attendance Trends */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-foreground">Attendance Trends</CardTitle>
+              <CardTitle className="text-foreground">Attendance Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={attendanceTrends}>
+                <BarChart data={attendanceTrends}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="week" stroke="hsl(var(--muted-foreground))" />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -253,12 +339,13 @@ const Reports = () => {
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
+                      color: "hsl(var(--foreground))",
                     }}
                   />
-                  <Line type="monotone" dataKey="present" stroke="hsl(var(--chart-2))" strokeWidth={2} />
-                  <Line type="monotone" dataKey="absent" stroke="hsl(var(--primary))" strokeWidth={2} />
-                  <Line type="monotone" dataKey="late" stroke="hsl(var(--chart-4))" strokeWidth={2} />
-                </LineChart>
+                  <Bar dataKey="present" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="absent" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="late" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -269,55 +356,69 @@ const Reports = () => {
               <CardTitle className="text-foreground">Incidents by Type</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={incidentsByType}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {incidentsByType.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              {incidentsByType.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={incidentsByType}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {incidentsByType.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No incidents in selected date range
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Monthly Incidents */}
+          {/* Incidents by Date */}
           <Card className="bg-card border-border lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-foreground">Monthly Incidents Overview</CardTitle>
+              <CardTitle className="text-foreground">Incidents Overview ({dateRange})</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyIncidents}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {incidentsByDate.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={incidentsByDate}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
+                      }}
+                    />
+                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No incidents in selected date range
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
