@@ -13,6 +13,7 @@ import Camera from "./pages/Camera";
 import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
 import Auth from "./pages/Auth";
+import IncidentDetail from "./pages/IncidentDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const AppContent = () => {
       <Route path="/settings" element={<Settings />} />
       <Route path="/reports" element={<Reports />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/incident/:id" element={<IncidentDetail />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

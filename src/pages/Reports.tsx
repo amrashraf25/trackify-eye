@@ -58,7 +58,24 @@ const Reports = () => {
   // Filter data based on date range
   const filteredIncidents = useMemo(() => {
     if (!incidents) return [];
-    const startDate = getDateRangeStart();
+    const now = new Date();
+    let startDate: Date;
+    switch (dateRange) {
+      case "week":
+        startDate = subDays(now, 7);
+        break;
+      case "month":
+        startDate = subMonths(now, 1);
+        break;
+      case "quarter":
+        startDate = subMonths(now, 3);
+        break;
+      case "year":
+        startDate = subYears(now, 1);
+        break;
+      default:
+        startDate = subDays(now, 7);
+    }
     return incidents.filter((incident) => 
       isAfter(new Date(incident.detected_at), startDate)
     );
@@ -66,7 +83,24 @@ const Reports = () => {
 
   const filteredAttendance = useMemo(() => {
     if (!attendance) return [];
-    const startDate = getDateRangeStart();
+    const now = new Date();
+    let startDate: Date;
+    switch (dateRange) {
+      case "week":
+        startDate = subDays(now, 7);
+        break;
+      case "month":
+        startDate = subMonths(now, 1);
+        break;
+      case "quarter":
+        startDate = subMonths(now, 3);
+        break;
+      case "year":
+        startDate = subYears(now, 1);
+        break;
+      default:
+        startDate = subDays(now, 7);
+    }
     return attendance.filter((record) => 
       isAfter(new Date(record.date), startDate)
     );
@@ -341,6 +375,8 @@ const Reports = () => {
                       borderRadius: "8px",
                       color: "hsl(var(--foreground))",
                     }}
+                    itemStyle={{ color: "hsl(var(--foreground))" }}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
                   />
                   <Bar dataKey="present" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="absent" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
@@ -380,39 +416,10 @@ const Reports = () => {
                         borderRadius: "8px",
                         color: "hsl(var(--foreground))",
                       }}
+                      itemStyle={{ color: "hsl(var(--foreground))" }}
+                      labelStyle={{ color: "hsl(var(--foreground))" }}
                     />
                   </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  No incidents in selected date range
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Incidents by Date */}
-          <Card className="bg-card border-border lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-foreground">Incidents Overview ({dateRange})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {incidentsByDate.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={incidentsByDate}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "8px",
-                        color: "hsl(var(--foreground))",
-                      }}
-                    />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-[300px] text-muted-foreground">

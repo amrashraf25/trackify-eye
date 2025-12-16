@@ -33,6 +33,8 @@ const BehaviorPieChart = () => {
                 borderRadius: '8px',
                 color: 'hsl(var(--foreground))'
               }}
+              itemStyle={{ color: 'hsl(var(--foreground))' }}
+              labelStyle={{ color: 'hsl(var(--foreground))' }}
               formatter={(value: number) => [`${value}%`, 'Students']}
             />
             <Legend 
