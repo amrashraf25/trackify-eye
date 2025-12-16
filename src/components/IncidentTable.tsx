@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "./ui/button";
 import { Play } from "lucide-react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 interface IncidentRecord {
   id: string;
@@ -21,6 +22,7 @@ interface IncidentTableProps {
 
 const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: records = [], isLoading } = useQuery({
     queryKey: ["incidents-table"],
@@ -122,7 +124,7 @@ const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <Button variant="view" size="sm">
+                  <Button variant="view" size="sm" onClick={() => navigate(`/incident/${record.id}`)}>
                     View
                   </Button>
                 </td>

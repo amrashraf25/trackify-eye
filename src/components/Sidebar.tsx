@@ -1,6 +1,7 @@
-import { BookOpen, Users, Stethoscope, AlertTriangle, Video, Settings, Shield, LayoutDashboard, BarChart3 } from "lucide-react";
+import { BookOpen, Users, Stethoscope, AlertTriangle, Video, Settings, LayoutDashboard, BarChart3 } from "lucide-react";
 import { Button } from "./ui/button";
 import { NavLink, useLocation } from "react-router-dom";
+import trackifyLogo from "@/assets/trackify_logo.jfif";
 
 interface NavItem {
   icon: React.ElementType;
@@ -26,9 +27,7 @@ const Sidebar = () => {
     <aside className="w-64 min-h-screen bg-sidebar flex flex-col border-r border-border">
       {/* Logo */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shadow-glow-red">
-          <Shield className="w-6 h-6 text-primary-foreground" />
-        </div>
+        <img src={trackifyLogo} alt="Trackify Logo" className="w-10 h-10 rounded-lg object-cover" />
         <span className="text-xl font-semibold text-foreground tracking-tight">Trackify</span>
       </div>
 
