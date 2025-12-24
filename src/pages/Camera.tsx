@@ -1,8 +1,9 @@
 import MainLayout from "@/components/layout/MainLayout";
-import { useState } from "react";
-import { Video, VideoOff, Users, Clock, Eye } from "lucide-react";
+import { useState, useRef, useCallback } from "react";
+import { Video, VideoOff, Users, Clock, Eye, Camera as CameraIcon, Square } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const cameras = [
   { id: 1, room: 101, status: "active", detected: 28, present: 26, lastActivity: "2 min ago" },
@@ -17,6 +18,54 @@ const cameras = [
 
 const Camera = () => {
   const [selectedCamera, setSelectedCamera] = useState(cameras[0]);
+  const [isLiveActive, setIsLiveActive] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
+
+  const startLiveCamera = useCallback(async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 },
+        audio: false,
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      
+      setStream(mediaStream);
+      setIsLiveActive(true);
+      
+      toast({
+        title: "Live Camera Started",
+        description: "Camera feed is now active. Run your Python script to process the feed.",
+      });
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      toast({
+        title: "Camera Error",
+        description: "Could not access camera. Please check permissions.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
+
+  const stopLiveCamera = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsLiveActive(false);
+    
+    toast({
+      title: "Live Camera Stopped",
+      description: "Camera feed has been stopped.",
+    });
+  }, [stream, toast]);
 
   return (
     <MainLayout title="Camera Records">
@@ -83,8 +132,23 @@ const Camera = () => {
               </Badge>
             </div>
 
-            <div className="aspect-video bg-secondary rounded-lg flex items-center justify-center mb-4">
-              {selectedCamera.status === "active" ? (
+            {/* Live Camera Feed or Placeholder */}
+            <div className="aspect-video bg-secondary rounded-lg flex items-center justify-center mb-4 overflow-hidden relative">
+              {isLiveActive ? (
+                <>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 left-2 flex items-center gap-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-medium">
+                    <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                    LIVE
+                  </div>
+                </>
+              ) : selectedCamera.status === "active" ? (
                 <Video className="w-16 h-16 text-muted-foreground" />
               ) : (
                 <VideoOff className="w-16 h-16 text-muted-foreground/50" />
@@ -113,9 +177,50 @@ const Camera = () => {
               <span>Last activity: {selectedCamera.lastActivity}</span>
             </div>
 
-            <Button className="w-full mt-4" disabled={selectedCamera.status === "offline"}>
+            {/* Live Camera Button */}
+            <div className="flex gap-2 mt-4">
+              {!isLiveActive ? (
+                <Button 
+                  className="flex-1" 
+                  onClick={startLiveCamera}
+                  disabled={selectedCamera.status === "offline"}
+                >
+                  <CameraIcon className="w-4 h-4 mr-2" />
+                  Start Live Feed
+                </Button>
+              ) : (
+                <Button 
+                  className="flex-1" 
+                  variant="destructive"
+                  onClick={stopLiveCamera}
+                >
+                  <Square className="w-4 h-4 mr-2" />
+                  Stop Live Feed
+                </Button>
+              )}
+            </div>
+
+            <Button 
+              className="w-full mt-2" 
+              variant="outline"
+              disabled={selectedCamera.status === "offline"}
+            >
               View Full Recording
             </Button>
+          </div>
+
+          {/* Python Integration Info */}
+          <div className="bg-card rounded-xl border border-border p-5">
+            <h4 className="font-semibold text-foreground mb-3">Backend Integration</h4>
+            <p className="text-sm text-muted-foreground mb-3">
+              Your Python script can send data to the edge function endpoint:
+            </p>
+            <code className="block text-xs bg-secondary p-2 rounded text-foreground break-all">
+              POST /functions/v1/camera-feed
+            </code>
+            <p className="text-xs text-muted-foreground mt-2">
+              Actions: phone_detected, behavior_alert, report_incident, update_attendance
+            </p>
           </div>
 
           {/* Recent Activity */}
