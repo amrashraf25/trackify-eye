@@ -4,6 +4,7 @@ import { Video, VideoOff, Users, Clock, Eye, Camera as CameraIcon, Square } from
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import PythonIntegrationCode from "@/components/PythonIntegrationCode";
 
 const cameras = [
   { id: 1, room: 101, status: "active", detected: 28, present: 26, lastActivity: "2 min ago" },
@@ -209,19 +210,8 @@ const Camera = () => {
             </Button>
           </div>
 
-          {/* Python Integration Info */}
-          <div className="bg-card rounded-xl border border-border p-5">
-            <h4 className="font-semibold text-foreground mb-3">Backend Integration</h4>
-            <p className="text-sm text-muted-foreground mb-3">
-              Your Python script can send data to the edge function endpoint:
-            </p>
-            <code className="block text-xs bg-secondary p-2 rounded text-foreground break-all">
-              POST /functions/v1/camera-feed
-            </code>
-            <p className="text-xs text-muted-foreground mt-2">
-              Actions: phone_detected, behavior_alert, report_incident, update_attendance
-            </p>
-          </div>
+          {/* Python Integration Code */}
+          <PythonIntegrationCode />
 
           {/* Recent Activity */}
           <div className="bg-card rounded-xl border border-border p-5">
