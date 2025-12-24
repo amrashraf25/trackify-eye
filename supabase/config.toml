@@ -1,1 +1,4 @@
 project_id = "itrtpjtzvujuovysvvre"
+
+[functions.camera-feed]
+verify_jwt = false

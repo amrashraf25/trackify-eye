@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Cigarette, Users, Swords, AlertCircle, Flame } from "lucide-react";
+import { Cigarette, Users, Swords, AlertCircle, Flame, Smartphone, Moon, MessageCircle, Coffee, Utensils } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface Incident {
@@ -18,6 +18,11 @@ const getIncidentIcon = (type: string) => {
   if (lowerType.includes("fight")) return Swords;
   if (lowerType.includes("aggression")) return Users;
   if (lowerType.includes("fire")) return Flame;
+  if (lowerType.includes("phone")) return Smartphone;
+  if (lowerType.includes("sleeping")) return Moon;
+  if (lowerType.includes("talking")) return MessageCircle;
+  if (lowerType.includes("drinking")) return Coffee;
+  if (lowerType.includes("eating")) return Utensils;
   return AlertCircle;
 };
 
