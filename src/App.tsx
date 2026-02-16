@@ -25,16 +25,15 @@ const AppContent = () => {
   
   return (
     <Routes>
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/courses" element={<ProtectedRoute allowedRoles={["admin", "dean", "doctor"]}><Courses /></ProtectedRoute>} />
-      <Route path="/students" element={<ProtectedRoute allowedRoles={["admin", "dean", "doctor"]}><Students /></ProtectedRoute>} />
-      <Route path="/doctors" element={<ProtectedRoute allowedRoles={["admin", "dean"]}><Doctors /></ProtectedRoute>} />
-      <Route path="/alerts" element={<ProtectedRoute allowedRoles={["admin", "dean", "doctor"]}><Alerts /></ProtectedRoute>} />
-      <Route path="/camera" element={<ProtectedRoute allowedRoles={["admin", "dean"]}><Camera /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin", "dean"]}><Reports /></ProtectedRoute>} />
-      <Route path="/incident/:id" element={<ProtectedRoute><IncidentDetail /></ProtectedRoute>} />
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/courses" element={<Courses />} />
+      <Route path="/students" element={<Students />} />
+      <Route path="/doctors" element={<Doctors />} />
+      <Route path="/alerts" element={<Alerts />} />
+      <Route path="/camera" element={<Camera />} />
+      <Route path="/settings" element={<Settings />} />
+      <Route path="/reports" element={<Reports />} />
+      <Route path="/incident/:id" element={<IncidentDetail />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
