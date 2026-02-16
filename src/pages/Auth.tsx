@@ -14,7 +14,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [isSignUp, setIsSignUp] = useState(false);
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
@@ -31,7 +31,7 @@ const Auth = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
       toast.error("Please enter both email and password");
@@ -39,12 +39,20 @@ const Auth = () => {
     }
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      toast.error(error.message);
+    if (isSignUp) {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Account created successfully!");
+      }
     } else {
-      toast.success("Logged in successfully");
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Logged in successfully");
+      }
     }
     setLoading(false);
   };
@@ -63,7 +71,7 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-foreground">Email</Label>
               <div className="relative">
@@ -95,10 +103,13 @@ const Auth = () => {
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? (isSignUp ? "Creating account..." : "Signing in...") : (isSignUp ? "Sign Up" : "Sign In")}
             </Button>
             <p className="text-xs text-center text-muted-foreground mt-4">
-              Contact your administrator to get your account credentials
+              {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+              <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="text-primary underline">
+                {isSignUp ? "Sign In" : "Sign Up"}
+              </button>
             </p>
           </form>
         </CardContent>
