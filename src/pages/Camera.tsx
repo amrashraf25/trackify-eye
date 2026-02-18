@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import PythonIntegrationCode from "@/components/PythonIntegrationCode";
+import LiveIncidentFeed from "@/components/LiveIncidentFeed";
 
 const cameras = [
   { id: 1, room: 101, status: "active", detected: 28, present: 26, lastActivity: "2 min ago" },
@@ -213,24 +214,8 @@ const Camera = () => {
           {/* Python Integration Code */}
           <PythonIntegrationCode />
 
-          {/* Recent Activity */}
-          <div className="bg-card rounded-xl border border-border p-5">
-            <h4 className="font-semibold text-foreground mb-4">Recent Activity</h4>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Face detected</span>
-                <span className="text-foreground">2 min ago</span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Motion detected</span>
-                <span className="text-foreground">5 min ago</span>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-muted-foreground">Recording started</span>
-                <span className="text-foreground">1 hour ago</span>
-              </div>
-            </div>
-          </div>
+          {/* Live Detection Feed */}
+          <LiveIncidentFeed />
         </div>
       </div>
     </MainLayout>
