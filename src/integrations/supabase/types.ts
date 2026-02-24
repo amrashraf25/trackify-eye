@@ -16,29 +16,38 @@ export type Database = {
     Tables: {
       attendance_records: {
         Row: {
+          confidence_score: number | null
           course_id: string | null
           course_name: string
           created_at: string
           date: string
           id: string
+          marked_by: string | null
+          recognition_method: string | null
           status: string | null
           student_id: string | null
         }
         Insert: {
+          confidence_score?: number | null
           course_id?: string | null
           course_name: string
           created_at?: string
           date?: string
           id?: string
+          marked_by?: string | null
+          recognition_method?: string | null
           status?: string | null
           student_id?: string | null
         }
         Update: {
+          confidence_score?: number | null
           course_id?: string | null
           course_name?: string
           created_at?: string
           date?: string
           id?: string
+          marked_by?: string | null
+          recognition_method?: string | null
           status?: string | null
           student_id?: string | null
         }
@@ -48,6 +57,86 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      behavior_records: {
+        Row: {
+          action_name: string
+          action_type: string
+          course_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          recorded_by: string
+          score_change: number
+          student_id: string
+        }
+        Insert: {
+          action_name: string
+          action_type: string
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          recorded_by: string
+          score_change: number
+          student_id: string
+        }
+        Update: {
+          action_name?: string
+          action_type?: string
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          recorded_by?: string
+          score_change?: number
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "behavior_records_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "behavior_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      behavior_scores: {
+        Row: {
+          id: string
+          score: number
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          score?: number
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          score?: number
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "behavior_scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: true
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -125,6 +214,44 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      doctor_attendance: {
+        Row: {
+          course_id: string | null
+          created_at: string
+          date: string
+          doctor_id: string
+          id: string
+          marked_by: string | null
+          status: string
+        }
+        Insert: {
+          course_id?: string | null
+          created_at?: string
+          date?: string
+          doctor_id: string
+          id?: string
+          marked_by?: string | null
+          status?: string
+        }
+        Update: {
+          course_id?: string | null
+          created_at?: string
+          date?: string
+          doctor_id?: string
+          id?: string
+          marked_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctor_attendance_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       enrollments: {
         Row: {
@@ -289,6 +416,51 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recognition_log: {
+        Row: {
+          attempt_by: string
+          confidence_score: number | null
+          course_id: string | null
+          created_at: string
+          id: string
+          recognized: boolean
+          student_id: string | null
+        }
+        Insert: {
+          attempt_by: string
+          confidence_score?: number | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          recognized?: boolean
+          student_id?: string | null
+        }
+        Update: {
+          attempt_by?: string
+          confidence_score?: number | null
+          course_id?: string | null
+          created_at?: string
+          id?: string
+          recognized?: boolean
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recognition_log_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recognition_log_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {
