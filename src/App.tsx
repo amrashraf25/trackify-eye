@@ -14,6 +14,8 @@ import Alerts from "./pages/Alerts";
 import Camera from "./pages/Camera";
 import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
+import Attendance from "./pages/Attendance";
+import Behavior from "./pages/Behavior";
 import Auth from "./pages/Auth";
 import IncidentDetail from "./pages/IncidentDetail";
 import NotFound from "./pages/NotFound";
@@ -27,6 +29,8 @@ const AppContent = () => {
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/attendance" element={<ProtectedRoute allowedRoles={["admin", "dean", "doctor"]}><Attendance /></ProtectedRoute>} />
+      <Route path="/behavior" element={<ProtectedRoute allowedRoles={["admin", "dean", "doctor"]}><Behavior /></ProtectedRoute>} />
       <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
       <Route path="/students" element={<ProtectedRoute allowedRoles={["admin", "dean", "doctor"]}><Students /></ProtectedRoute>} />
       <Route path="/doctors" element={<ProtectedRoute allowedRoles={["admin", "dean"]}><Doctors /></ProtectedRoute>} />
