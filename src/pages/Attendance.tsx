@@ -3,21 +3,22 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, User, CheckCircle, XCircle, Clock, Camera, Users, Stethoscope } from "lucide-react";
+import { Search, User, CheckCircle, XCircle, Clock, Users, Stethoscope } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { format } from "date-fns";
+
+const WEEKS = Array.from({ length: 16 }, (_, i) => i + 1);
 
 const Attendance = () => {
   const { role, user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [selectedWeek, setSelectedWeek] = useState(1);
 
   const { data: courses = [] } = useQuery({
     queryKey: ["attendance-courses"],
@@ -46,10 +47,10 @@ const Attendance = () => {
     },
   });
 
-  const { data: todayAttendance = [] } = useQuery({
-    queryKey: ["today-attendance", selectedDate, selectedCourse],
+  const { data: weekAttendance = [] } = useQuery({
+    queryKey: ["week-attendance", selectedWeek, selectedCourse],
     queryFn: async () => {
-      let query = supabase.from("attendance_records").select("*").eq("date", selectedDate);
+      let query = supabase.from("attendance_records").select("*").eq("week_number", selectedWeek);
       if (selectedCourse !== "all") {
         query = query.eq("course_id", selectedCourse);
       }
@@ -69,9 +70,9 @@ const Attendance = () => {
   });
 
   const { data: doctorAttendance = [] } = useQuery({
-    queryKey: ["doctor-attendance", selectedDate],
+    queryKey: ["doctor-attendance", selectedWeek],
     queryFn: async () => {
-      const { data, error } = await supabase.from("doctor_attendance").select("*").eq("date", selectedDate);
+      const { data, error } = await supabase.from("doctor_attendance").select("*").eq("week_number", selectedWeek);
       if (error) throw error;
       return data;
     },
@@ -79,23 +80,26 @@ const Attendance = () => {
 
   const markStudentAttendance = useMutation({
     mutationFn: async ({ studentId, status, courseName, courseId }: { studentId: string; status: string; courseName: string; courseId: string | null }) => {
-      // Check if already marked
-      const existing = todayAttendance.find(
+      const existing = weekAttendance.find(
         (a) => a.student_id === studentId && (courseId ? a.course_id === courseId : true)
       );
       if (existing) {
-        const { error } = await supabase
-          .from("attendance_records")
-          .update({ status })
-          .eq("id", existing.id);
-        if (error) throw error;
+        if (existing.status === status) {
+          // Toggle off
+          const { error } = await supabase.from("attendance_records").delete().eq("id", existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("attendance_records").update({ status }).eq("id", existing.id);
+          if (error) throw error;
+        }
       } else {
         const { error } = await supabase.from("attendance_records").insert({
           student_id: studentId,
           course_name: courseName,
           course_id: courseId,
-          date: selectedDate,
+          date: new Date().toISOString().split("T")[0],
           status,
+          week_number: selectedWeek,
           marked_by: user?.id,
           recognition_method: "manual",
         });
@@ -103,7 +107,7 @@ const Attendance = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["today-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["week-attendance"] });
       toast.success("Attendance updated");
     },
     onError: (err: any) => toast.error(err.message),
@@ -115,14 +119,20 @@ const Attendance = () => {
         (a) => a.doctor_id === doctorId && (courseId ? a.course_id === courseId : true)
       );
       if (existing) {
-        const { error } = await supabase.from("doctor_attendance").update({ status }).eq("id", existing.id);
-        if (error) throw error;
+        if (existing.status === status) {
+          const { error } = await supabase.from("doctor_attendance").delete().eq("id", existing.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from("doctor_attendance").update({ status }).eq("id", existing.id);
+          if (error) throw error;
+        }
       } else {
         const { error } = await supabase.from("doctor_attendance").insert({
           doctor_id: doctorId,
           course_id: courseId,
-          date: selectedDate,
+          date: new Date().toISOString().split("T")[0],
           status,
+          week_number: selectedWeek,
           marked_by: user?.id,
         });
         if (error) throw error;
@@ -147,7 +157,7 @@ const Attendance = () => {
   );
 
   const getStudentStatus = (studentId: string) => {
-    const record = todayAttendance.find((a) => a.student_id === studentId);
+    const record = weekAttendance.find((a) => a.student_id === studentId);
     return record?.status || null;
   };
 
@@ -190,10 +200,27 @@ const Attendance = () => {
               ))}
             </SelectContent>
           </Select>
-          <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-44 bg-card border-border" />
         </div>
 
-        {/* Summary Cards */}
+        {/* Week selector */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <p className="text-sm font-medium text-foreground">Week:</p>
+          <div className="flex flex-wrap gap-1">
+            {WEEKS.map((w) => (
+              <Button
+                key={w}
+                size="sm"
+                variant={selectedWeek === w ? "default" : "outline"}
+                className="h-8 w-8 p-0 text-xs"
+                onClick={() => setSelectedWeek(w)}
+              >
+                {w}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-card rounded-xl border border-border p-4">
             <p className="text-xs text-muted-foreground">Total Students</p>
@@ -231,7 +258,7 @@ const Attendance = () => {
                   const status = getStudentStatus(student.id);
                   return (
                     <div key={student.id} className="flex items-center gap-4 bg-card rounded-xl border border-border p-4">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                         {student.avatar_url ? (
                           <img src={student.avatar_url} alt={student.full_name} className="w-full h-full rounded-full object-cover" />
                         ) : (
@@ -244,28 +271,16 @@ const Attendance = () => {
                       </div>
                       {getStatusBadge(status)}
                       <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          size="sm"
-                          variant={status === "present" ? "default" : "outline"}
-                          className="h-8 px-3 text-xs"
-                          onClick={() => markStudentAttendance.mutate({ studentId: student.id, status: "present", courseName: selectedCourseName, courseId: selectedCourse === "all" ? null : selectedCourse })}
-                        >
+                        <Button size="sm" variant={status === "present" ? "default" : "outline"} className="h-8 px-3 text-xs"
+                          onClick={() => markStudentAttendance.mutate({ studentId: student.id, status: "present", courseName: selectedCourseName, courseId: selectedCourse === "all" ? null : selectedCourse })}>
                           <CheckCircle className="w-3.5 h-3.5 mr-1" />Present
                         </Button>
-                        <Button
-                          size="sm"
-                          variant={status === "absent" ? "destructive" : "outline"}
-                          className="h-8 px-3 text-xs"
-                          onClick={() => markStudentAttendance.mutate({ studentId: student.id, status: "absent", courseName: selectedCourseName, courseId: selectedCourse === "all" ? null : selectedCourse })}
-                        >
+                        <Button size="sm" variant={status === "absent" ? "destructive" : "outline"} className="h-8 px-3 text-xs"
+                          onClick={() => markStudentAttendance.mutate({ studentId: student.id, status: "absent", courseName: selectedCourseName, courseId: selectedCourse === "all" ? null : selectedCourse })}>
                           <XCircle className="w-3.5 h-3.5 mr-1" />Absent
                         </Button>
-                        <Button
-                          size="sm"
-                          variant={status === "late" ? "secondary" : "outline"}
-                          className="h-8 px-3 text-xs"
-                          onClick={() => markStudentAttendance.mutate({ studentId: student.id, status: "late", courseName: selectedCourseName, courseId: selectedCourse === "all" ? null : selectedCourse })}
-                        >
+                        <Button size="sm" variant={status === "late" ? "secondary" : "outline"} className="h-8 px-3 text-xs"
+                          onClick={() => markStudentAttendance.mutate({ studentId: student.id, status: "late", courseName: selectedCourseName, courseId: selectedCourse === "all" ? null : selectedCourse })}>
                           <Clock className="w-3.5 h-3.5 mr-1" />Late
                         </Button>
                       </div>
@@ -297,28 +312,16 @@ const Attendance = () => {
                       </div>
                       {getStatusBadge(status)}
                       <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          size="sm"
-                          variant={status === "present" ? "default" : "outline"}
-                          className="h-8 px-3 text-xs"
-                          onClick={() => markDoctorAttendance.mutate({ doctorId: doctor.id, status: "present", courseId: selectedCourse === "all" ? null : selectedCourse })}
-                        >
+                        <Button size="sm" variant={status === "present" ? "default" : "outline"} className="h-8 px-3 text-xs"
+                          onClick={() => markDoctorAttendance.mutate({ doctorId: doctor.id, status: "present", courseId: selectedCourse === "all" ? null : selectedCourse })}>
                           <CheckCircle className="w-3.5 h-3.5 mr-1" />Present
                         </Button>
-                        <Button
-                          size="sm"
-                          variant={status === "absent" ? "destructive" : "outline"}
-                          className="h-8 px-3 text-xs"
-                          onClick={() => markDoctorAttendance.mutate({ doctorId: doctor.id, status: "absent", courseId: selectedCourse === "all" ? null : selectedCourse })}
-                        >
+                        <Button size="sm" variant={status === "absent" ? "destructive" : "outline"} className="h-8 px-3 text-xs"
+                          onClick={() => markDoctorAttendance.mutate({ doctorId: doctor.id, status: "absent", courseId: selectedCourse === "all" ? null : selectedCourse })}>
                           <XCircle className="w-3.5 h-3.5 mr-1" />Absent
                         </Button>
-                        <Button
-                          size="sm"
-                          variant={status === "late" ? "secondary" : "outline"}
-                          className="h-8 px-3 text-xs"
-                          onClick={() => markDoctorAttendance.mutate({ doctorId: doctor.id, status: "late", courseId: selectedCourse === "all" ? null : selectedCourse })}
-                        >
+                        <Button size="sm" variant={status === "late" ? "secondary" : "outline"} className="h-8 px-3 text-xs"
+                          onClick={() => markDoctorAttendance.mutate({ doctorId: doctor.id, status: "late", courseId: selectedCourse === "all" ? null : selectedCourse })}>
                           <Clock className="w-3.5 h-3.5 mr-1" />Late
                         </Button>
                       </div>
