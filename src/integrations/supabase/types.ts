@@ -26,6 +26,7 @@ export type Database = {
           recognition_method: string | null
           status: string | null
           student_id: string | null
+          week_number: number | null
         }
         Insert: {
           confidence_score?: number | null
@@ -38,6 +39,7 @@ export type Database = {
           recognition_method?: string | null
           status?: string | null
           student_id?: string | null
+          week_number?: number | null
         }
         Update: {
           confidence_score?: number | null
@@ -50,6 +52,7 @@ export type Database = {
           recognition_method?: string | null
           status?: string | null
           student_id?: string | null
+          week_number?: number | null
         }
         Relationships: [
           {
@@ -224,6 +227,7 @@ export type Database = {
           id: string
           marked_by: string | null
           status: string
+          week_number: number | null
         }
         Insert: {
           course_id?: string | null
@@ -233,6 +237,7 @@ export type Database = {
           id?: string
           marked_by?: string | null
           status?: string
+          week_number?: number | null
         }
         Update: {
           course_id?: string | null
@@ -242,6 +247,7 @@ export type Database = {
           id?: string
           marked_by?: string | null
           status?: string
+          week_number?: number | null
         }
         Relationships: [
           {
