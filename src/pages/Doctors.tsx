@@ -1,14 +1,25 @@
 import MainLayout from "@/components/layout/MainLayout";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Users, Stethoscope } from "lucide-react";
+import { Search, User, BookOpen, Users, Stethoscope, Plus, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const Doctors = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [selectedCourseToAssign, setSelectedCourseToAssign] = useState("");
+  const { role } = useAuth();
+  const queryClient = useQueryClient();
+  const canManage = role === "admin" || role === "dean";
 
   const { data: doctors = [] } = useQuery({
     queryKey: ["doctors-profiles"],
@@ -19,7 +30,7 @@ const Doctors = () => {
     },
   });
 
-  const { data: courses = [] } = useQuery({
+  const { data: courses = [], refetch: refetchCourses } = useQuery({
     queryKey: ["doctor-courses"],
     queryFn: async () => {
       const { data, error } = await supabase.from("courses").select("*");
@@ -36,6 +47,34 @@ const Doctors = () => {
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId) || filteredDoctors[0];
 
   const getDoctorCourses = (doctorId: string) => courses.filter((c) => c.doctor_id === doctorId);
+  const getUnassignedCourses = () => courses.filter((c) => !c.doctor_id);
+
+  const assignCourse = useMutation({
+    mutationFn: async () => {
+      if (!selectedDoctor || !selectedCourseToAssign) throw new Error("Select a course");
+      const { error } = await supabase.from("courses").update({ doctor_id: selectedDoctor.id }).eq("id", selectedCourseToAssign);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["doctor-courses"] });
+      toast.success("Course assigned successfully");
+      setAssignOpen(false);
+      setSelectedCourseToAssign("");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const unassignCourse = useMutation({
+    mutationFn: async (courseId: string) => {
+      const { error } = await supabase.from("courses").update({ doctor_id: null }).eq("id", courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["doctor-courses"] });
+      toast.success("Course unassigned");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   return (
     <MainLayout title="Doctors">
@@ -65,11 +104,15 @@ const Doctors = () => {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="w-5 h-5 text-primary" />
+                      {doctor.avatar_url ? (
+                        <img src={doctor.avatar_url} alt={doctor.full_name || ""} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        <User className="w-5 h-5 text-primary" />
+                      )}
                     </div>
                     <div>
                       <p className="font-medium text-foreground">{doctor.full_name || "Unnamed"}</p>
-                      <p className="text-xs text-muted-foreground">{doctor.email}</p>
+                      <p className="text-xs text-muted-foreground">{doctor.email} • {getDoctorCourses(doctor.id).length} courses</p>
                     </div>
                   </div>
                 </div>
@@ -83,8 +126,12 @@ const Doctors = () => {
             <>
               <div className="bg-card rounded-xl border border-border p-6">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-8 h-8 text-primary" />
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                    {selectedDoctor.avatar_url ? (
+                      <img src={selectedDoctor.avatar_url} alt={selectedDoctor.full_name || ""} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <User className="w-8 h-8 text-primary" />
+                    )}
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-foreground">{selectedDoctor.full_name}</h3>
@@ -97,7 +144,7 @@ const Doctors = () => {
                   <div className="bg-secondary/50 rounded-lg p-4">
                     <div className="flex items-center gap-2 text-muted-foreground mb-2">
                       <BookOpen className="w-4 h-4" />
-                      <span className="text-xs">Courses</span>
+                      <span className="text-xs">Assigned Courses</span>
                     </div>
                     <p className="text-2xl font-semibold text-foreground">{getDoctorCourses(selectedDoctor.id).length}</p>
                   </div>
@@ -112,16 +159,52 @@ const Doctors = () => {
               </div>
 
               <div className="bg-card rounded-xl border border-border p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Assigned Courses</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Assigned Courses</h3>
+                  {canManage && (
+                    <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm"><Link2 className="w-4 h-4 mr-2" />Assign Course</Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader><DialogTitle>Assign Course to {selectedDoctor.full_name}</DialogTitle></DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Select Course</Label>
+                            <Select value={selectedCourseToAssign} onValueChange={setSelectedCourseToAssign}>
+                              <SelectTrigger><SelectValue placeholder="Choose a course..." /></SelectTrigger>
+                              <SelectContent>
+                                {getUnassignedCourses().map((c) => (
+                                  <SelectItem key={c.id} value={c.id}>{c.name} ({c.course_code})</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button onClick={() => assignCourse.mutate()} disabled={!selectedCourseToAssign} className="w-full">
+                            Assign
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
                 {getDoctorCourses(selectedDoctor.id).length > 0 ? (
                   <div className="space-y-3">
                     {getDoctorCourses(selectedDoctor.id).map((course) => (
-                      <div key={course.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                        <BookOpen className="w-5 h-5 text-primary" />
-                        <div>
-                          <p className="font-medium text-foreground">{course.name}</p>
-                          <p className="text-xs text-muted-foreground">{course.course_code} • {course.credits} credits • {course.semester}</p>
+                      <div key={course.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <BookOpen className="w-5 h-5 text-primary" />
+                          <div>
+                            <p className="font-medium text-foreground">{course.name}</p>
+                            <p className="text-xs text-muted-foreground">{course.course_code} • {course.credits} credits • {course.semester}</p>
+                          </div>
                         </div>
+                        {canManage && (
+                          <Button size="sm" variant="ghost" className="text-destructive text-xs h-7"
+                            onClick={() => unassignCourse.mutate(course.id)}>
+                            Remove
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
