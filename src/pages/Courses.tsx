@@ -491,7 +491,8 @@ const Courses = () => {
                   </div>
                 ) : (
                   enrolledStudents.map((student, i) => {
-                    const score = getScore(student.id);
+                    const score = getWeeklyScore(student.id);
+                    const recordCount = getWeeklyRecordCount(student.id);
                     return (
                       <motion.div
                         key={student.id}
