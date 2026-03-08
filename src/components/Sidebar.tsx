@@ -14,7 +14,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/", roles: ["admin", "dean", "doctor", "student"] },
-  { icon: BookOpen, label: "Courses", path: "/courses", roles: ["admin", "dean", "doctor"] },
+  { icon: BookOpen, label: "Courses", path: "/courses", roles: ["admin", "dean", "doctor", "student"] },
   { icon: Users, label: "Students", path: "/students", roles: ["admin", "dean", "doctor"] },
   { icon: Stethoscope, label: "Doctors", path: "/doctors", roles: ["admin", "dean"] },
   { icon: AlertTriangle, label: "Alerts", path: "/alerts", roles: ["admin", "dean", "doctor"] },
