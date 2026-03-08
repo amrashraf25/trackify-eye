@@ -43,6 +43,7 @@ const Courses = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [newCourse, setNewCourse] = useState({ course_code: "", name: "", description: "", credits: "3", semester: "Fall 2024" });
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const [selectedBehaviorWeek, setSelectedBehaviorWeek] = useState(1);
   const [behaviorDialogOpen, setBehaviorDialogOpen] = useState(false);
   const [behaviorStudentId, setBehaviorStudentId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<"positive" | "negative">("negative");
@@ -111,7 +112,7 @@ const Courses = () => {
   });
 
   const { data: behaviorHistory = [] } = useQuery({
-    queryKey: ["behavior-history-course", selectedCourseId, behaviorStudentId],
+    queryKey: ["behavior-history-course", selectedCourseId, behaviorStudentId, selectedBehaviorWeek],
     queryFn: async () => {
       if (!behaviorStudentId || !selectedCourseId) return [];
       const { data, error } = await supabase
@@ -119,6 +120,7 @@ const Courses = () => {
         .select("*")
         .eq("student_id", behaviorStudentId)
         .eq("course_id", selectedCourseId)
+        .eq("week_number", selectedBehaviorWeek)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -206,6 +208,7 @@ const Courses = () => {
         action_name: action.name,
         score_change: action.change,
         notes: behaviorNotes || null,
+        week_number: selectedBehaviorWeek,
       });
       if (error) throw error;
     },
@@ -423,7 +426,31 @@ const Courses = () => {
             </TabsContent>
 
             {/* BEHAVIOR TAB */}
-            <TabsContent value="behavior" className="mt-6 space-y-4">
+            <TabsContent value="behavior" className="mt-6 space-y-6">
+              {/* Week selector */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+                className="bg-card rounded-2xl border border-border/50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Select Week</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {WEEKS.map((w) => (
+                    <motion.div key={w} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+                      <Button
+                        size="sm"
+                        variant={selectedBehaviorWeek === w ? "default" : "outline"}
+                        className={`h-9 w-9 p-0 text-xs rounded-xl font-bold transition-all ${
+                          selectedBehaviorWeek === w
+                            ? "bg-gradient-to-br from-accent to-primary shadow-lg shadow-accent/25"
+                            : "border-border/50 hover:border-accent/40"
+                        }`}
+                        onClick={() => setSelectedBehaviorWeek(w)}
+                      >
+                        {w}
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+
               <div className="space-y-3">
                 {enrolledStudents.length === 0 ? (
                   <div className="text-center py-16 text-muted-foreground">
