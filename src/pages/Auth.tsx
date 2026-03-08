@@ -167,48 +167,51 @@ const Auth = () => {
       <AnimatePresence>
         {isAnimating && transitionPhase !== "lensClose" && (
           <div className="fixed inset-0 z-50 pointer-events-none">
-            {/* Owl flying to center and growing */}
+            {/* Flying owl swooping to center */}
             <motion.div
               className="absolute left-1/2 top-1/2 flex items-center justify-center"
               style={{ x: "-50%", y: "-50%" }}
-              initial={{ scale: 1 }}
+              initial={{ scale: 0.5, opacity: 0, y: "20%" }}
               animate={
                 transitionPhase === "flyToCenter"
-                  ? { scale: 2.2 }
+                  ? { scale: 1.5, opacity: 1, y: "-50%" }
                   : transitionPhase === "spreadWings"
-                  ? { scale: 2.8, opacity: 1 }
-                  : { scale: 3.5, opacity: 0 }
+                  ? { scale: 2.5, opacity: 1, y: "-50%" }
+                  : { scale: 4, opacity: 0, y: "-50%" }
               }
-              transition={{ duration: 0.65, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
             >
-              {/* Glow trail */}
+              {/* Glow aura behind flying owl */}
               <motion.div
-                className="absolute w-60 h-60 rounded-full"
+                className="absolute w-80 h-80 rounded-full"
                 style={{
-                  background: "radial-gradient(circle, hsl(var(--primary) / 0.5) 0%, hsl(200 100% 50% / 0.2) 50%, transparent 70%)",
-                  filter: "blur(25px)",
+                  background: "radial-gradient(circle, hsl(200 100% 60% / 0.4) 0%, hsl(var(--primary) / 0.2) 40%, transparent 70%)",
+                  filter: "blur(30px)",
                 }}
-                animate={{ scale: [1, 1.8, 2.5], opacity: [0.6, 0.8, 0] }}
-                transition={{ duration: 1.5 }}
+                animate={{ scale: [1, 2, 3], opacity: [0.5, 0.7, 0] }}
+                transition={{ duration: 1.8 }}
               />
+              {/* Flying owl image */}
               <motion.img
-                src={owlMascot}
-                alt="Trackify Owl"
-                className="w-40 h-40 object-contain relative z-10"
-                style={{ filter: "drop-shadow(0 0 50px hsl(200 100% 60% / 0.6))" }}
+                src={owlFlying}
+                alt="Trackify Owl Flying"
+                className="w-64 h-64 object-contain relative z-10"
+                style={{ filter: "drop-shadow(0 0 60px hsl(200 100% 60% / 0.5))" }}
                 animate={
                   transitionPhase === "flyToCenter"
-                    ? { rotate: [0, -3, 3, 0] }
+                    ? { rotate: [0, -2, 2, 0] }
+                    : transitionPhase === "spreadWings"
+                    ? { scale: [1, 1.15, 1.1] }
                     : {}
                 }
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
               />
             </motion.div>
 
-            {/* Wings expanding from center */}
+            {/* Wings expanding from center — using the flying owl's spread wings as visual cue */}
             {(transitionPhase === "spreadWings" || transitionPhase === "reveal") && (
               <>
-                {/* Left wing */}
+                {/* Left wing sweep */}
                 <motion.div
                   className="absolute top-0 h-full bg-background"
                   style={{ right: "50%", width: "55%", borderRadius: "0 40% 40% 0 / 0 50% 50% 0" }}
@@ -216,13 +219,12 @@ const Auth = () => {
                   animate={{ x: "0%", opacity: 1 }}
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  {/* Feather texture */}
-                  <div className="absolute inset-0 opacity-10" style={{
-                    background: "repeating-linear-gradient(135deg, transparent 0px, transparent 20px, hsl(var(--primary)) 20px, hsl(var(--primary)) 21px)"
+                  <div className="absolute inset-0 opacity-[0.06]" style={{
+                    background: "repeating-linear-gradient(135deg, transparent 0px, transparent 18px, hsl(200 100% 60%) 18px, hsl(200 100% 60%) 19px)"
                   }} />
                 </motion.div>
 
-                {/* Right wing */}
+                {/* Right wing sweep */}
                 <motion.div
                   className="absolute top-0 h-full bg-background"
                   style={{ left: "50%", width: "55%", borderRadius: "40% 0 0 40% / 50% 0 0 50%" }}
@@ -230,12 +232,12 @@ const Auth = () => {
                   animate={{ x: "0%", opacity: 1 }}
                   transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <div className="absolute inset-0 opacity-10" style={{
-                    background: "repeating-linear-gradient(-135deg, transparent 0px, transparent 20px, hsl(var(--primary)) 20px, hsl(var(--primary)) 21px)"
+                  <div className="absolute inset-0 opacity-[0.06]" style={{
+                    background: "repeating-linear-gradient(-135deg, transparent 0px, transparent 18px, hsl(200 100% 60%) 18px, hsl(200 100% 60%) 19px)"
                   }} />
                 </motion.div>
 
-                {/* Full coverage after wings meet */}
+                {/* Full screen cover */}
                 <motion.div
                   className="absolute inset-0 bg-background"
                   initial={{ opacity: 0 }}
