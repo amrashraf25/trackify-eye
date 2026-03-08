@@ -141,6 +141,7 @@ const Doctors = () => {
                 <>
                   <DoctorAttendanceSection
                     doctorId={selectedDoctor.id}
+                    doctorName={selectedDoctor.full_name || "Doctor"}
                     doctorCourses={getDoctorCourses(selectedDoctor.id)}
                     userId={user?.id}
                   />
