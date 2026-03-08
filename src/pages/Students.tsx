@@ -500,19 +500,79 @@ const Students = () => {
               </motion.div>
 
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass rounded-2xl p-5">
-                <h4 className="font-bold text-foreground mb-4 flex items-center gap-2 text-sm">
-                  <BookOpen className="w-4 h-4 text-primary" />
-                  Enrolled Courses ({getStudentCourses(selectedStudent.id).length})
-                </h4>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-bold text-foreground flex items-center gap-2 text-sm">
+                    <BookOpen className="w-4 h-4 text-primary" />
+                    Enrolled Courses ({getStudentCourses(selectedStudent.id).length})
+                  </h4>
+                  {canManage && (
+                    <Dialog open={assignCourseOpen} onOpenChange={setAssignCourseOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="rounded-xl text-xs h-8 border-border/50 hover:border-primary/40">
+                          <Plus className="w-3.5 h-3.5 mr-1" />Assign
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="glass">
+                        <DialogHeader><DialogTitle>Assign Course to {selectedStudent.full_name}</DialogTitle></DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label className="text-xs uppercase tracking-wider">Select Course</Label>
+                            <Select value={courseToAssign} onValueChange={setCourseToAssign}>
+                              <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Choose a course..." /></SelectTrigger>
+                              <SelectContent>
+                                {getUnenrolledCourses(selectedStudent.id).map((c) => (
+                                  <SelectItem key={c.id} value={c.id}>{c.name} ({c.course_code})</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button
+                            onClick={() => assignCourse.mutate({ studentId: selectedStudent.id, courseId: courseToAssign })}
+                            disabled={!courseToAssign}
+                            className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                          >
+                            Assign Course
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
                 <div className="space-y-2">
                   {getStudentCourses(selectedStudent.id).length > 0 ? (
                     getStudentCourses(selectedStudent.id).map((course) => (
                       <div key={course.id} className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors">
                         <BookOpen className="w-5 h-5 text-primary shrink-0" />
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground text-sm">{course.name}</p>
                           <p className="text-[10px] text-muted-foreground font-mono">{course.course_code} • {course.credits} credits</p>
                         </div>
+                        {canManage && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 h-7 w-7 p-0 rounded-lg shrink-0">
+                                <XCircle className="w-3.5 h-3.5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Course</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Remove <strong>{selectedStudent.full_name}</strong> from <strong>{course.name}</strong>?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => unenrollFromCourse.mutate({ studentId: selectedStudent.id, courseId: course.id })}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Remove
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     ))
                   ) : (
