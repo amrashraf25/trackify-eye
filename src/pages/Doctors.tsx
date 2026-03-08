@@ -2,7 +2,10 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Users, Stethoscope, Plus, Link2, Trash2 } from "lucide-react";
+import {
+  Search, User, BookOpen, Users, Stethoscope, Plus, Link2, Trash2,
+  ChevronLeft, ChevronRight, UserCheck, UserX, Clock, TrendingUp, TrendingDown
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,21 +13,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
+import DoctorList from "@/components/doctors/DoctorList";
+import DoctorDetail from "@/components/doctors/DoctorDetail";
+import DoctorAttendanceSection from "@/components/doctors/DoctorAttendanceSection";
+import DoctorBehaviorSection from "@/components/doctors/DoctorBehaviorSection";
 
 const Doctors = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
-  const [assignOpen, setAssignOpen] = useState(false);
-  const [selectedCourseToAssign, setSelectedCourseToAssign] = useState("");
   const [addDoctorOpen, setAddDoctorOpen] = useState(false);
   const [newDoctor, setNewDoctor] = useState({ full_name: "", email: "", password: "" });
   const [addingDoctor, setAddingDoctor] = useState(false);
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const queryClient = useQueryClient();
   const canManage = role === "admin" || role === "dean";
+  const isDean = role === "dean";
 
   const { data: doctors = [] } = useQuery({
     queryKey: ["doctors-profiles"],
@@ -35,7 +42,7 @@ const Doctors = () => {
     },
   });
 
-  const { data: courses = [], refetch: refetchCourses } = useQuery({
+  const { data: courses = [] } = useQuery({
     queryKey: ["doctor-courses"],
     queryFn: async () => {
       const { data, error } = await supabase.from("courses").select("*");
@@ -50,36 +57,8 @@ const Doctors = () => {
   );
 
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId) || filteredDoctors[0];
-
   const getDoctorCourses = (doctorId: string) => courses.filter((c) => c.doctor_id === doctorId);
   const getUnassignedCourses = () => courses.filter((c) => !c.doctor_id);
-
-  const assignCourse = useMutation({
-    mutationFn: async () => {
-      if (!selectedDoctor || !selectedCourseToAssign) throw new Error("Select a course");
-      const { error } = await supabase.from("courses").update({ doctor_id: selectedDoctor.id }).eq("id", selectedCourseToAssign);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["doctor-courses"] });
-      toast.success("Course assigned successfully");
-      setAssignOpen(false);
-      setSelectedCourseToAssign("");
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
-
-  const unassignCourse = useMutation({
-    mutationFn: async (courseId: string) => {
-      const { error } = await supabase.from("courses").update({ doctor_id: null }).eq("id", courseId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["doctor-courses"] });
-      toast.success("Course unassigned");
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
 
   const handleAddDoctor = async () => {
     if (!newDoctor.full_name || !newDoctor.email || !newDoctor.password) {
@@ -109,26 +88,10 @@ const Doctors = () => {
     }
   };
 
-  const deleteDoctor = useMutation({
-    mutationFn: async (doctorId: string) => {
-      // Unassign courses first
-      await supabase.from("courses").update({ doctor_id: null }).eq("doctor_id", doctorId);
-      // Delete profile
-      const { error } = await supabase.from("profiles").delete().eq("id", doctorId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["doctors-profiles"] });
-      queryClient.invalidateQueries({ queryKey: ["doctor-courses"] });
-      toast.success("Doctor deleted successfully");
-      setSelectedDoctorId(null);
-    },
-    onError: (err: any) => toast.error(err.message),
-  });
-
   return (
     <MainLayout title="Doctors">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Doctor List */}
         <div className="glass rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="relative flex-1">
@@ -155,157 +118,39 @@ const Doctors = () => {
             )}
           </div>
 
-          {filteredDoctors.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Stethoscope className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>No doctors found</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredDoctors.map((doctor, index) => (
-                <motion.div
-                  key={doctor.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => setSelectedDoctorId(doctor.id)}
-                  className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
-                    selectedDoctor?.id === doctor.id
-                      ? "bg-primary/10 ring-1 ring-primary/30"
-                      : "bg-secondary/30 hover:bg-secondary/50"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
-                      {doctor.avatar_url ? (
-                        <img src={doctor.avatar_url} alt={doctor.full_name || ""} className="w-full h-full rounded-xl object-cover" />
-                      ) : (
-                        <User className="w-5 h-5 text-primary" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-foreground text-sm">{doctor.full_name || "Unnamed"}</p>
-                      <p className="text-[10px] text-muted-foreground">{doctor.email} • {getDoctorCourses(doctor.id).length} courses</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+          <DoctorList
+            doctors={filteredDoctors}
+            selectedDoctorId={selectedDoctor?.id}
+            onSelect={setSelectedDoctorId}
+            getDoctorCourses={getDoctorCourses}
+          />
         </div>
 
+        {/* Right: Doctor Detail */}
         <div className="lg:col-span-2 space-y-6">
           {selectedDoctor ? (
             <>
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass rounded-2xl p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden ring-2 ring-primary/20">
-                    {selectedDoctor.avatar_url ? (
-                      <img src={selectedDoctor.avatar_url} alt={selectedDoctor.full_name || ""} className="w-full h-full rounded-2xl object-cover" />
-                    ) : (
-                      <User className="w-8 h-8 text-primary" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-foreground">{selectedDoctor.full_name}</h3>
-                    <p className="text-xs text-muted-foreground font-mono">{selectedDoctor.email}</p>
-                    <Badge className="mt-1 capitalize text-[10px] bg-primary/10 text-primary">{selectedDoctor.role}</Badge>
-                  </div>
-                  {canManage && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="icon" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Doctor</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete <strong>{selectedDoctor.full_name}</strong>? Their courses will be unassigned. This cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteDoctor.mutate(selectedDoctor.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
+              <DoctorDetail
+                doctor={selectedDoctor}
+                doctorCourses={getDoctorCourses(selectedDoctor.id)}
+                unassignedCourses={getUnassignedCourses()}
+                canManage={canManage}
+              />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-secondary/30 rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                      <BookOpen className="w-4 h-4" />
-                      <span className="text-[10px] uppercase tracking-wider">Assigned Courses</span>
-                    </div>
-                    <p className="text-2xl font-bold text-foreground">{getDoctorCourses(selectedDoctor.id).length}</p>
-                  </div>
-                  <div className="bg-secondary/30 rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                      <Users className="w-4 h-4" />
-                      <span className="text-[10px] uppercase tracking-wider">Role</span>
-                    </div>
-                    <p className="text-lg font-bold text-foreground capitalize">{selectedDoctor.role}</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-foreground">Assigned Courses</h3>
-                  {canManage && (
-                    <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="rounded-xl"><Link2 className="w-4 h-4 mr-2" />Assign Course</Button>
-                      </DialogTrigger>
-                      <DialogContent className="glass">
-                        <DialogHeader><DialogTitle>Assign Course to {selectedDoctor.full_name}</DialogTitle></DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label>Select Course</Label>
-                            <Select value={selectedCourseToAssign} onValueChange={setSelectedCourseToAssign}>
-                              <SelectTrigger className="rounded-xl"><SelectValue placeholder="Choose a course..." /></SelectTrigger>
-                              <SelectContent>
-                                {getUnassignedCourses().map((c) => (
-                                  <SelectItem key={c.id} value={c.id}>{c.name} ({c.course_code})</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <Button onClick={() => assignCourse.mutate()} disabled={!selectedCourseToAssign} className="w-full rounded-xl">Assign</Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
-                </div>
-                {getDoctorCourses(selectedDoctor.id).length > 0 ? (
-                  <div className="space-y-2">
-                    {getDoctorCourses(selectedDoctor.id).map((course) => (
-                      <div key={course.id} className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <BookOpen className="w-5 h-5 text-primary" />
-                          <div>
-                            <p className="font-medium text-foreground text-sm">{course.name}</p>
-                            <p className="text-[10px] text-muted-foreground font-mono">{course.course_code} • {course.credits} credits • {course.semester}</p>
-                          </div>
-                        </div>
-                        {canManage && (
-                          <Button size="sm" variant="ghost" className="text-destructive text-xs h-7 rounded-lg hover:bg-destructive/10"
-                            onClick={() => unassignCourse.mutate(course.id)}>
-                            Remove
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No courses assigned</p>
-                )}
-              </motion.div>
+              {isDean && (
+                <>
+                  <DoctorAttendanceSection
+                    doctorId={selectedDoctor.id}
+                    doctorCourses={getDoctorCourses(selectedDoctor.id)}
+                    userId={user?.id}
+                  />
+                  <DoctorBehaviorSection
+                    doctorId={selectedDoctor.id}
+                    doctorName={selectedDoctor.full_name || "Doctor"}
+                    userId={user?.id}
+                  />
+                </>
+              )}
             </>
           ) : (
             <div className="glass rounded-2xl p-6 text-center text-muted-foreground">
