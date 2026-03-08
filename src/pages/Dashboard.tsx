@@ -321,6 +321,7 @@ const Dashboard = () => {
   const { role } = useAuth();
 
   if (role === "student") return <StudentDashboard />;
+  if (role === "doctor") return <DoctorDashboard />;
   return <AdminDashboard />;
 };
 
