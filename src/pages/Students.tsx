@@ -154,6 +154,24 @@ const Students = () => {
 
   const canManage = role === "admin" || role === "dean";
 
+  const deleteStudent = useMutation({
+    mutationFn: async (studentId: string) => {
+      await supabase.from("enrollments").delete().eq("student_id", studentId);
+      await supabase.from("attendance_records").delete().eq("student_id", studentId);
+      await supabase.from("behavior_records").delete().eq("student_id", studentId);
+      await supabase.from("behavior_scores").delete().eq("student_id", studentId);
+      const { error } = await supabase.from("students").delete().eq("id", studentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast.success("Student deleted successfully");
+      setSelectedStudentId(null);
+      refetch();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <MainLayout title="Students">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
