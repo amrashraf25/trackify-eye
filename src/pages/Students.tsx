@@ -30,6 +30,7 @@ const Students = () => {
   });
   const { role } = useAuth();
   const queryClient = useQueryClient();
+  const [selectedBehaviorWeek, setSelectedBehaviorWeek] = useState<number | "all">("all");
 
   const { data: students = [], refetch } = useQuery({
     queryKey: ["students"],
