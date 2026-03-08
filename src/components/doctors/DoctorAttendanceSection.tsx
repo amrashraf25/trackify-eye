@@ -35,9 +35,15 @@ const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }
 
   const markAttendance = useMutation({
     mutationFn: async ({ courseId, weekNumber, status }: { courseId: string; weekNumber: number; status: string }) => {
-      const existing = attendance.find(
-        (a) => a.course_id === courseId && a.week_number === weekNumber
-      );
+      // Fetch fresh data to avoid stale closure
+      const { data: freshAttendance } = await supabase
+        .from("doctor_attendance")
+        .select("*")
+        .eq("doctor_id", doctorId)
+        .eq("course_id", courseId)
+        .eq("week_number", weekNumber);
+
+      const existing = freshAttendance?.[0];
 
       if (existing) {
         if (existing.status === status) {
@@ -72,11 +78,12 @@ const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }
     ? filteredRecords.filter((a) => a.week_number === parseInt(selectedWeek))
     : filteredRecords;
 
-  // Stats
-  const totalRecords = filteredRecords.length;
-  const presentCount = filteredRecords.filter((a) => a.status === "present").length;
-  const absentCount = filteredRecords.filter((a) => a.status === "absent").length;
-  const lateCount = filteredRecords.filter((a) => a.status === "late").length;
+  // Stats - use week-filtered records when a week is selected
+  const statsRecords = selectedWeek !== "all" ? weekFilteredRecords : filteredRecords;
+  const totalRecords = statsRecords.length;
+  const presentCount = statsRecords.filter((a) => a.status === "present").length;
+  const absentCount = statsRecords.filter((a) => a.status === "absent").length;
+  const lateCount = statsRecords.filter((a) => a.status === "late").length;
   const attendanceRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0;
 
   const selectedCourseName = selectedCourseId !== "all"
