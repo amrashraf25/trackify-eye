@@ -33,6 +33,8 @@ const positiveActions = [
   { name: "Leadership in project", change: 10 },
 ];
 
+const weeks = Array.from({ length: 16 }, (_, i) => i + 1);
+
 const Behavior = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -42,6 +44,8 @@ const Behavior = () => {
   const [actionType, setActionType] = useState<"positive" | "negative">("negative");
   const [selectedAction, setSelectedAction] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<string>("none");
+  const [selectedWeek, setSelectedWeek] = useState<string>("all");
+  const [recordWeek, setRecordWeek] = useState<string>("1");
   const [notes, setNotes] = useState("");
 
   const { data: students = [] } = useQuery({
