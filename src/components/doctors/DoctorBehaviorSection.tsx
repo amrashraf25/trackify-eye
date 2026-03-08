@@ -91,7 +91,7 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId, doctorCourses }: 
   const handleReset = async () => {
     if (selectedCourseId !== "all") {
       // Reset only for this course
-      await supabase.from("doctor_behavior_records").delete().eq("doctor_id", doctorId).eq("course_id" as any, selectedCourseId);
+      await (supabase.from("doctor_behavior_records").delete().eq("doctor_id", doctorId) as any).eq("course_id", selectedCourseId);
     } else {
       await supabase.from("doctor_behavior_records").delete().eq("doctor_id", doctorId);
       await supabase.from("doctor_behavior_scores").update({ score: 100 }).eq("doctor_id", doctorId);
