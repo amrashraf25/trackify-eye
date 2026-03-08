@@ -1,8 +1,8 @@
 import MainLayout from "@/components/layout/MainLayout";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Plus } from "lucide-react";
+import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,13 @@ const Students = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
-  const [newStudent, setNewStudent] = useState({ full_name: "", email: "", student_code: "", year_level: "1", phone: "" });
+  const [loading, setLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newStudent, setNewStudent] = useState({
+    full_name: "", email: "", student_code: "", year_level: "1", phone: "", password: ""
+  });
   const { role } = useAuth();
 
   const { data: students = [], refetch } = useQuery({
@@ -77,25 +83,70 @@ const Students = () => {
     return "text-destructive";
   };
 
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image must be less than 5MB");
+        return;
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleAddStudent = async () => {
-    if (!newStudent.full_name || !newStudent.student_code) {
-      toast.error("Name and Student Code are required");
+    if (!newStudent.full_name || !newStudent.student_code || !newStudent.email || !newStudent.password) {
+      toast.error("Name, Student Code, Email and Password are required");
       return;
     }
-    const { error } = await supabase.from("students").insert({
-      full_name: newStudent.full_name,
-      email: newStudent.email || null,
-      student_code: newStudent.student_code,
-      year_level: parseInt(newStudent.year_level),
-      phone: newStudent.phone || null,
-    });
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Student added successfully");
-      setNewStudent({ full_name: "", email: "", student_code: "", year_level: "1", phone: "" });
+    if (newStudent.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Upload avatar if provided
+      let avatar_url: string | null = null;
+      if (avatarFile) {
+        const ext = avatarFile.name.split(".").pop();
+        const fileName = `${newStudent.student_code}_${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, avatarFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+        avatar_url = urlData.publicUrl;
+      }
+
+      // Call edge function to create auth user + student record
+      const { data: session } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("create-student", {
+        body: {
+          full_name: newStudent.full_name,
+          email: newStudent.email,
+          password: newStudent.password,
+          student_code: newStudent.student_code,
+          year_level: parseInt(newStudent.year_level),
+          phone: newStudent.phone || null,
+          avatar_url,
+        },
+      });
+
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+
+      toast.success("Student account created successfully");
+      setNewStudent({ full_name: "", email: "", student_code: "", year_level: "1", phone: "", password: "" });
+      setAvatarFile(null);
+      setAvatarPreview(null);
       setAddOpen(false);
       refetch();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create student");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,22 +166,65 @@ const Students = () => {
                 <DialogTrigger asChild>
                   <Button size="sm" className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"><Plus className="w-4 h-4 mr-2" />Add Student</Button>
                 </DialogTrigger>
-                <DialogContent className="glass">
-                  <DialogHeader><DialogTitle>Add New Student</DialogTitle></DialogHeader>
-                  <div className="space-y-3">
-                    <div><Label>Full Name *</Label><Input value={newStudent.full_name} onChange={(e) => setNewStudent({ ...newStudent, full_name: e.target.value })} className="rounded-xl" /></div>
-                    <div><Label>Student Code *</Label><Input value={newStudent.student_code} onChange={(e) => setNewStudent({ ...newStudent, student_code: e.target.value })} placeholder="e.g. STU001" className="rounded-xl" /></div>
-                    <div><Label>Email</Label><Input type="email" value={newStudent.email} onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })} className="rounded-xl" /></div>
-                    <div><Label>Phone</Label><Input value={newStudent.phone} onChange={(e) => setNewStudent({ ...newStudent, phone: e.target.value })} className="rounded-xl" /></div>
-                    <div><Label>Year Level</Label>
+                <DialogContent className="glass max-h-[90vh] overflow-y-auto">
+                  <DialogHeader><DialogTitle>Create Student Account</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
+                    {/* Avatar Upload */}
+                    <div className="flex flex-col items-center gap-3">
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-24 h-24 rounded-2xl bg-secondary/50 border-2 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden"
+                      >
+                        {avatarPreview ? (
+                          <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover rounded-2xl" />
+                        ) : (
+                          <div className="text-center">
+                            <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
+                            <span className="text-[10px] text-muted-foreground">Photo</span>
+                          </div>
+                        )}
+                      </div>
+                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
+                      <p className="text-[10px] text-muted-foreground">Click to upload student photo</p>
+                    </div>
+
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><User className="w-3 h-3" />Full Name *</Label>
+                      <Input value={newStudent.full_name} onChange={(e) => setNewStudent({ ...newStudent, full_name: e.target.value })} className="rounded-xl mt-1" placeholder="Ahmed Mohamed" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Hash className="w-3 h-3" />Student Code *</Label>
+                      <Input value={newStudent.student_code} onChange={(e) => setNewStudent({ ...newStudent, student_code: e.target.value })} placeholder="e.g. STU001" className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Mail className="w-3 h-3" />Email *</Label>
+                      <Input type="email" value={newStudent.email} onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })} placeholder="student@institution.edu" className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Lock className="w-3 h-3" />Password *</Label>
+                      <Input type="password" value={newStudent.password} onChange={(e) => setNewStudent({ ...newStudent, password: e.target.value })} placeholder="Min 6 characters" className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Phone className="w-3 h-3" />Phone</Label>
+                      <Input value={newStudent.phone} onChange={(e) => setNewStudent({ ...newStudent, phone: e.target.value })} className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Year Level</Label>
                       <Select value={newStudent.year_level} onValueChange={(v) => setNewStudent({ ...newStudent, year_level: v })}>
-                        <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {[1, 2, 3, 4, 5].map((y) => <SelectItem key={y} value={String(y)}>Year {y}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button onClick={handleAddStudent} className="w-full rounded-xl bg-gradient-to-r from-primary to-accent">Add Student</Button>
+                    <Button onClick={handleAddStudent} disabled={loading} className="w-full rounded-xl bg-gradient-to-r from-primary to-accent">
+                      {loading ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                          Creating...
+                        </span>
+                      ) : "Create Student Account"}
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
