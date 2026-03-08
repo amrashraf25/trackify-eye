@@ -92,7 +92,7 @@ const Sidebar = () => {
           Sign Out
         </Button>
         <p className="text-[10px] text-sidebar-foreground/40 text-center mt-3 uppercase tracking-wider">
-          © 2024 Trackify — AI Platform
+          © 2024 Trackify
         </p>
       </div>
     </aside>
