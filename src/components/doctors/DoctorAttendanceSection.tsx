@@ -67,6 +67,11 @@ const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["doctor-attendance-records", doctorId] });
+      toast.success("Attendance updated");
+    },
+    onError: (err: any) => {
+      console.error("Attendance error:", err);
+      toast.error(err.message || "Failed to update attendance");
     },
   });
 
