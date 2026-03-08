@@ -293,7 +293,7 @@ const Students = () => {
             <div className="space-y-2">
               {filteredStudents.map((student, index) => {
                 const studentCourses = getStudentCourses(student.id);
-                const score = getScore(student.id);
+                const score = getOverallScore(student.id);
                 return (
                   <motion.div
                     key={student.id}
