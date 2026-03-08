@@ -249,8 +249,56 @@ const StudentDashboard = () => {
           </motion.div>
         )}
 
-        {/* Grades */}
+        {/* My Courses */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          className="glass rounded-2xl p-5">
+          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            My Courses ({enrollments.length})
+          </h3>
+          {enrollments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No courses enrolled yet</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {enrollments.map((enrollment: any, i: number) => {
+                const course = enrollment.courses;
+                if (!course) return null;
+                return (
+                  <motion.div
+                    key={enrollment.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.55 + i * 0.05 }}
+                    className="p-4 rounded-xl bg-secondary/40 hover:bg-secondary/60 transition-all border border-border/30"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                          <BookOpen className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground text-sm">{course.name}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{course.course_code}</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-primary/10 text-primary text-[10px]">{course.credits} cr</Badge>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
+                      <span>{course.semester}</span>
+                      <span>•</span>
+                      <Badge className={
+                        course.status === "active" ? "bg-emerald-500/10 text-emerald-500 text-[10px]" : "bg-muted text-muted-foreground text-[10px]"
+                      }>{course.status}</Badge>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Grades */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
           className="glass rounded-2xl p-5">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <GraduationCap className="w-4 h-4 text-primary" />
