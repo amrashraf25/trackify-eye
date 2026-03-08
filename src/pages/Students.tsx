@@ -98,11 +98,13 @@ const Students = () => {
   };
 
   const getOverallScore = (studentId: string, courseId?: string) => {
-    let totalScore = 0;
-    for (const w of WEEKS) {
-      totalScore += getWeeklyScore(studentId, w, courseId);
+    let records = behaviorRecords.filter((r) => r.student_id === studentId);
+    if (courseId && courseId !== "all") {
+      records = records.filter((r) => r.course_id === courseId);
     }
-    return Math.round(totalScore / 16);
+    if (records.length === 0) return 100;
+    const total = records.reduce((sum, r) => sum + r.score_change, 0);
+    return Math.max(0, Math.min(100, 100 + total));
   };
 
   const getWeeklyScore = (studentId: string, week: number, courseId?: string) => {
