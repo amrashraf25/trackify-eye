@@ -510,7 +510,12 @@ const Courses = () => {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-foreground truncate text-sm">{student.full_name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-foreground truncate text-sm">{student.full_name}</p>
+                              {recordCount > 0 && (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{recordCount} record{recordCount !== 1 ? "s" : ""}</Badge>
+                              )}
+                            </div>
                             <p className="text-[11px] text-muted-foreground font-mono">{student.student_code}</p>
                             <div className="flex items-center gap-3 mt-2">
                               <div className="relative h-2.5 flex-1 rounded-full bg-secondary/50 overflow-hidden">
