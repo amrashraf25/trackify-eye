@@ -75,6 +75,7 @@ export type Database = {
           recorded_by: string
           score_change: number
           student_id: string
+          week_number: number | null
         }
         Insert: {
           action_name: string
@@ -86,6 +87,7 @@ export type Database = {
           recorded_by: string
           score_change: number
           student_id: string
+          week_number?: number | null
         }
         Update: {
           action_name?: string
@@ -97,6 +99,7 @@ export type Database = {
           recorded_by?: string
           score_change?: number
           student_id?: string
+          week_number?: number | null
         }
         Relationships: [
           {

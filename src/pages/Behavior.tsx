@@ -33,6 +33,8 @@ const positiveActions = [
   { name: "Leadership in project", change: 10 },
 ];
 
+const weeks = Array.from({ length: 16 }, (_, i) => i + 1);
+
 const Behavior = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -42,6 +44,8 @@ const Behavior = () => {
   const [actionType, setActionType] = useState<"positive" | "negative">("negative");
   const [selectedAction, setSelectedAction] = useState("");
   const [selectedCourse, setSelectedCourse] = useState<string>("none");
+  const [selectedWeek, setSelectedWeek] = useState<string>("all");
+  const [recordWeek, setRecordWeek] = useState<string>("1");
   const [notes, setNotes] = useState("");
 
   const { data: students = [] } = useQuery({
@@ -72,15 +76,19 @@ const Behavior = () => {
   });
 
   const { data: history = [] } = useQuery({
-    queryKey: ["behavior-history", selectedStudentId],
+    queryKey: ["behavior-history", selectedStudentId, selectedWeek],
     queryFn: async () => {
       if (!selectedStudentId) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from("behavior_records")
         .select("*")
         .eq("student_id", selectedStudentId)
         .order("created_at", { ascending: false })
         .limit(50);
+      if (selectedWeek !== "all") {
+        query = query.eq("week_number", parseInt(selectedWeek));
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -102,6 +110,7 @@ const Behavior = () => {
         action_name: action.name,
         score_change: action.change,
         notes: notes || null,
+        week_number: parseInt(recordWeek),
       });
       if (error) throw error;
     },
@@ -158,6 +167,17 @@ const Behavior = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input placeholder="Search students..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
               </div>
+              <Select value={selectedWeek} onValueChange={setSelectedWeek}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Week" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Weeks</SelectItem>
+                  {weeks.map((w) => (
+                    <SelectItem key={w} value={String(w)}>Week {w}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-3">
@@ -270,6 +290,17 @@ const Behavior = () => {
                         </Select>
                       </div>
                       <div>
+                        <Label>Week</Label>
+                        <Select value={recordWeek} onValueChange={setRecordWeek}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {weeks.map((w) => (
+                              <SelectItem key={w} value={String(w)}>Week {w}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
                         <Label>Notes (optional)</Label>
                         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add notes..." />
                       </div>
@@ -301,7 +332,7 @@ const Behavior = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground">{record.action_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {record.score_change > 0 ? "+" : ""}{record.score_change}% • {format(new Date(record.created_at), "MMM dd, yyyy HH:mm")}
+                            {record.score_change > 0 ? "+" : ""}{record.score_change}% • {record.week_number ? `Week ${record.week_number} • ` : ""}{format(new Date(record.created_at), "MMM dd, yyyy HH:mm")}
                           </p>
                           {record.notes && <p className="text-xs text-muted-foreground mt-1">{record.notes}</p>}
                         </div>
