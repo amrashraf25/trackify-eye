@@ -283,8 +283,8 @@ const DoctorDetail = ({ doctor, doctorCourses, unassignedCourses, canManage }: D
               <p className="text-2xl font-bold text-foreground">{totalCredits}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">Credits</p>
             </div>
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/15 rounded-xl p-3.5">
-              <GraduationCap className="w-4 h-4 text-emerald-500 mb-1.5" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-secondary/30 to-secondary/10 border border-border/30 rounded-xl p-3.5">
+              <GraduationCap className="w-4 h-4 text-foreground/80 mb-1.5" />
               <p className="text-2xl font-bold text-foreground capitalize">{doctor.role}</p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">Role</p>
             </div>
