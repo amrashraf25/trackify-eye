@@ -184,6 +184,9 @@ const Auth = () => {
       toast.error(error.message);
       setLoading(false);
       isTransitioning.current = false;
+      // Flash eyes red
+      setErrorFlash(true);
+      setTimeout(() => setErrorFlash(false), 1500);
     } else {
       // Start cinematic transition while keeping auth background visible
       setTransitionPhase("hold");
