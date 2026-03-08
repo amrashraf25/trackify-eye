@@ -1,6 +1,7 @@
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import DoctorDashboard from "@/components/dashboard/DoctorDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import MetricCard from "@/components/dashboard/MetricCard";
 import AttendanceChart from "@/components/dashboard/AttendanceChart";
@@ -320,6 +321,7 @@ const Dashboard = () => {
   const { role } = useAuth();
 
   if (role === "student") return <StudentDashboard />;
+  if (role === "doctor") return <DoctorDashboard />;
   return <AdminDashboard />;
 };
 
