@@ -76,15 +76,19 @@ const Behavior = () => {
   });
 
   const { data: history = [] } = useQuery({
-    queryKey: ["behavior-history", selectedStudentId],
+    queryKey: ["behavior-history", selectedStudentId, selectedWeek],
     queryFn: async () => {
       if (!selectedStudentId) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from("behavior_records")
         .select("*")
         .eq("student_id", selectedStudentId)
         .order("created_at", { ascending: false })
         .limit(50);
+      if (selectedWeek !== "all") {
+        query = query.eq("week_number", parseInt(selectedWeek));
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
