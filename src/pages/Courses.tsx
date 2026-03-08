@@ -244,6 +244,7 @@ const Courses = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["behavior-scores"] });
       queryClient.invalidateQueries({ queryKey: ["behavior-history-course"] });
+      queryClient.invalidateQueries({ queryKey: ["weekly-behavior-records"] });
       toast.success("Behavior recorded");
       setBehaviorDialogOpen(false);
       setSelectedAction("");
