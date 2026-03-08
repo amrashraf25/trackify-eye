@@ -64,7 +64,7 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId, doctorCourses }: 
       const scoreChange = parseInt(action.score_change);
       if (isNaN(scoreChange)) throw new Error("Invalid score");
 
-      const { error } = await supabase.from("doctor_behavior_records").insert({
+      const insertData: Record<string, any> = {
         doctor_id: doctorId,
         recorded_by: userId!,
         action_name: action.action_name,
@@ -73,7 +73,9 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId, doctorCourses }: 
         notes: action.notes || null,
         week_number: parseInt(action.week_number),
         course_id: action.course_id,
-      } as any);
+      };
+
+      const { error } = await supabase.from("doctor_behavior_records").insert(insertData as any);
       if (error) throw error;
     },
     onSuccess: () => {
