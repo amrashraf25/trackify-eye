@@ -1,19 +1,14 @@
 import MainLayout from "@/components/layout/MainLayout";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Search, User, BookOpen, Users, Stethoscope, Plus, Link2, Trash2,
-  ChevronLeft, ChevronRight, UserCheck, UserX, Clock, TrendingUp, TrendingDown
+  Search, Plus, Stethoscope, User, Lock, Mail
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
@@ -90,44 +85,86 @@ const Doctors = () => {
 
   return (
     <MainLayout title="Doctors">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Doctor List */}
-        <div className="glass rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search doctors..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl bg-secondary/50 border-border/50" />
-            </div>
-            {canManage && (
-              <Dialog open={addDoctorOpen} onOpenChange={setAddDoctorOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"><Plus className="w-4 h-4" /></Button>
-                </DialogTrigger>
-                <DialogContent className="glass">
-                  <DialogHeader><DialogTitle>Add New Doctor</DialogTitle></DialogHeader>
-                  <div className="space-y-4">
-                    <div><Label>Full Name</Label><Input placeholder="Dr. John Doe" value={newDoctor.full_name} onChange={(e) => setNewDoctor({ ...newDoctor, full_name: e.target.value })} className="rounded-xl" /></div>
-                    <div><Label>Email</Label><Input type="email" placeholder="doctor@institution.edu" value={newDoctor.email} onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })} className="rounded-xl" /></div>
-                    <div><Label>Password</Label><Input type="password" placeholder="Min 6 characters" value={newDoctor.password} onChange={(e) => setNewDoctor({ ...newDoctor, password: e.target.value })} className="rounded-xl" /></div>
-                    <Button onClick={handleAddDoctor} disabled={addingDoctor} className="w-full rounded-xl bg-gradient-to-r from-primary to-accent">
-                      {addingDoctor ? "Creating..." : "Create Doctor Account"}
-                    </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: Doctor List Panel */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="lg:col-span-4 xl:col-span-3"
+        >
+          <div className="rounded-2xl border border-border/30 bg-card overflow-hidden sticky top-6">
+            {/* Panel header */}
+            <div className="p-4 border-b border-border/20 bg-gradient-to-r from-primary/5 to-transparent">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Stethoscope className="w-4 h-4 text-primary" />
                   </div>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Faculty</h3>
+                    <p className="text-[10px] text-muted-foreground">{doctors.length} doctor{doctors.length !== 1 ? "s" : ""}</p>
+                  </div>
+                </div>
+                {canManage && (
+                  <Dialog open={addDoctorOpen} onOpenChange={setAddDoctorOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/20 h-8 w-8 p-0">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="glass">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Stethoscope className="w-5 h-5 text-primary" />
+                          Add New Doctor
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="flex items-center gap-1.5 text-xs mb-1.5"><User className="w-3 h-3" />Full Name</Label>
+                          <Input placeholder="Dr. John Doe" value={newDoctor.full_name} onChange={(e) => setNewDoctor({ ...newDoctor, full_name: e.target.value })} className="rounded-xl" />
+                        </div>
+                        <div>
+                          <Label className="flex items-center gap-1.5 text-xs mb-1.5"><Mail className="w-3 h-3" />Email</Label>
+                          <Input type="email" placeholder="doctor@institution.edu" value={newDoctor.email} onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })} className="rounded-xl" />
+                        </div>
+                        <div>
+                          <Label className="flex items-center gap-1.5 text-xs mb-1.5"><Lock className="w-3 h-3" />Password</Label>
+                          <Input type="password" placeholder="Min 6 characters" value={newDoctor.password} onChange={(e) => setNewDoctor({ ...newDoctor, password: e.target.value })} className="rounded-xl" />
+                        </div>
+                        <Button onClick={handleAddDoctor} disabled={addingDoctor} className="w-full rounded-xl bg-gradient-to-r from-primary to-accent shadow-lg shadow-primary/20">
+                          {addingDoctor ? "Creating..." : "Create Doctor Account"}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9 rounded-xl bg-secondary/30 border-border/30 text-xs placeholder:text-muted-foreground/60 focus:bg-secondary/50"
+                />
+              </div>
+            </div>
 
-          <DoctorList
-            doctors={filteredDoctors}
-            selectedDoctorId={selectedDoctor?.id}
-            onSelect={setSelectedDoctorId}
-            getDoctorCourses={getDoctorCourses}
-          />
-        </div>
+            {/* Doctor list */}
+            <div className="p-3">
+              <DoctorList
+                doctors={filteredDoctors}
+                selectedDoctorId={selectedDoctor?.id}
+                onSelect={setSelectedDoctorId}
+                getDoctorCourses={getDoctorCourses}
+              />
+            </div>
+          </div>
+        </motion.div>
 
         {/* Right: Doctor Detail */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-8 xl:col-span-9 space-y-6">
           {selectedDoctor ? (
             <>
               <DoctorDetail
@@ -155,9 +192,19 @@ const Doctors = () => {
               )}
             </>
           ) : (
-            <div className="glass rounded-2xl p-6 text-center text-muted-foreground">
-              Select a doctor to view details
-            </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="rounded-2xl border border-border/20 bg-card p-16 text-center"
+            >
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-border/20 flex items-center justify-center mx-auto mb-5">
+                <Stethoscope className="w-10 h-10 text-primary/30" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-1">Select a Doctor</h3>
+              <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                Choose a doctor from the panel to view their profile, courses, attendance, and behavior records.
+              </p>
+            </motion.div>
           )}
         </div>
       </div>
