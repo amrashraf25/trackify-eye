@@ -455,7 +455,7 @@ const Students = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-lg font-bold text-foreground">{selectedStudent.full_name}</h3>
-                    <p className="text-xs text-muted-foreground font-mono">{selectedStudent.student_code}</p>
+                    <p className="text-xs text-muted-foreground font-mono truncate max-w-[250px]">{selectedStudent.student_code}</p>
                     <Badge variant={selectedStudent.status === "active" ? "default" : "secondary"} className="mt-1 text-[10px]">
                       {selectedStudent.status}
                     </Badge>
