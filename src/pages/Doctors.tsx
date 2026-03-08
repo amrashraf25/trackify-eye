@@ -206,11 +206,34 @@ const Doctors = () => {
                       <User className="w-8 h-8 text-primary" />
                     )}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-xl font-bold text-foreground">{selectedDoctor.full_name}</h3>
                     <p className="text-xs text-muted-foreground font-mono">{selectedDoctor.email}</p>
                     <Badge className="mt-1 capitalize text-[10px] bg-primary/10 text-primary">{selectedDoctor.role}</Badge>
                   </div>
+                  {canManage && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Doctor</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete <strong>{selectedDoctor.full_name}</strong>? Their courses will be unassigned. This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteDoctor.mutate(selectedDoctor.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
