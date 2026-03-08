@@ -20,7 +20,8 @@ interface DoctorBehaviorSectionProps {
 
 const DoctorBehaviorSection = ({ doctorId, doctorName, userId }: DoctorBehaviorSectionProps) => {
   const [open, setOpen] = useState(false);
-  const [action, setAction] = useState({ action_name: "", action_type: "negative", score_change: "-5", notes: "" });
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [action, setAction] = useState({ action_name: "", action_type: "negative", score_change: "-5", notes: "", week_number: "1" });
   const queryClient = useQueryClient();
 
   const { data: score } = useQuery({
@@ -37,18 +38,25 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId }: DoctorBehaviorS
   });
 
   const { data: records = [] } = useQuery({
-    queryKey: ["doctor-behavior-records", doctorId],
+    queryKey: ["doctor-behavior-records", doctorId, selectedWeek],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("doctor_behavior_records")
         .select("*")
         .eq("doctor_id", doctorId)
-        .order("created_at", { ascending: false })
-        .limit(20);
+        .order("created_at", { ascending: false });
+      if (selectedWeek !== null) {
+        query = query.eq("week_number", selectedWeek);
+      }
+      const { data, error } = await query.limit(20);
       if (error) return [];
       return data;
     },
   });
+
+  const weeklyScore = selectedWeek !== null && records.length > 0
+    ? Math.max(0, Math.min(100, 100 + records.reduce((sum: number, r: any) => sum + r.score_change, 0)))
+    : null;
 
   const addRecord = useMutation({
     mutationFn: async () => {
