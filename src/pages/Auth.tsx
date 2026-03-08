@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock, Shield, User, Stethoscope, BookOpen, Eye, Scan, Brain } from "lucide-react";
+import { Mail, Lock, Shield, User, Stethoscope, BookOpen } from "lucide-react";
 import { toast } from "sonner";
-import trackifyLogo from "@/assets/trackify_logo.jfif";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import owlMascot from "@/assets/owl_mascot.png";
 import { motion } from "framer-motion";
 
 const demoAccounts = [
@@ -59,37 +59,53 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       <AnimatedBackground />
       
-      {/* Decorative glows */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md space-y-4 relative z-10">
-        {/* Hero section */}
+        {/* Owl Hero */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-6"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, type: "spring", stiffness: 200 }}
+          className="text-center mb-2"
         >
-          <div className="flex justify-center mb-4">
+          <motion.div
+            animate={{ y: [0, -12, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            className="flex justify-center mb-3"
+          >
             <div className="relative">
-              <img src={trackifyLogo} alt="Trackify" className="w-20 h-20 rounded-2xl object-cover ring-2 ring-primary/30 shadow-glow-primary" />
-              <div className="absolute -top-1 -right-1 w-6 h-6 bg-neon-cyan rounded-lg flex items-center justify-center animate-pulse">
-                <Brain className="w-3.5 h-3.5 text-background" />
-              </div>
+              <img
+                src={owlMascot}
+                alt="Trackify Owl"
+                className="w-36 h-36 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)]"
+              />
+              <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>
-          </div>
-          <h1 className="text-3xl font-bold gradient-text mb-1">Trackify</h1>
-          <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
-            <Scan className="w-4 h-4" />
-            AI-Powered Classroom Monitoring
-          </p>
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-3xl font-bold gradient-text mb-1"
+          >
+            Trackify
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="text-sm text-muted-foreground"
+          >
+            Smart Classroom Monitoring Platform
+          </motion.p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
         >
           <Card className="glass border-border/50 shadow-glow-primary/50">
             <CardHeader className="text-center pb-2">
@@ -149,7 +165,7 @@ const Auth = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
         >
           <Card className="glass border-border/50">
             <CardHeader className="pb-3 pt-4">
@@ -165,7 +181,7 @@ const Auth = () => {
                     key={acc.role}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.5 + index * 0.1 }}
+                    transition={{ delay: 0.6 + index * 0.1 }}
                     onClick={() => handleQuickLogin(acc)}
                     className="flex items-center gap-2 p-3 rounded-xl border border-border/50 hover:border-primary/40 hover:bg-secondary/50 transition-all text-left group hover-lift"
                   >
@@ -181,18 +197,6 @@ const Auth = () => {
               })}
             </CardContent>
           </Card>
-        </motion.div>
-
-        {/* Features row */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="flex items-center justify-center gap-6 text-[10px] text-muted-foreground/60 uppercase tracking-wider pt-2"
-        >
-          <span className="flex items-center gap-1"><Eye className="w-3 h-3" />Face Detection</span>
-          <span className="flex items-center gap-1"><Scan className="w-3 h-3" />Behavior AI</span>
-          <span className="flex items-center gap-1"><Brain className="w-3 h-3" />Smart Analytics</span>
         </motion.div>
       </div>
     </div>

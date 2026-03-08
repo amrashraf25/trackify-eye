@@ -1,4 +1,4 @@
-import { Bell, User, Sun, Moon, Cpu } from "lucide-react";
+import { Bell, User, Sun, Moon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -15,19 +15,13 @@ const Header = ({ title }: HeaderProps) => {
 
   return (
     <header className="h-16 glass border-b border-border/50 flex items-center justify-between px-6 transition-colors duration-300 relative z-10">
-      <div className="flex items-center gap-3">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <h1 className="text-xl font-bold text-foreground">{title}</h1>
-        </motion.div>
-        <Badge variant="outline" className="text-[10px] gap-1 border-neon-blue/30 text-neon-blue hidden sm:flex">
-          <Cpu className="w-3 h-3" />
-          AI Active
-        </Badge>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <h1 className="text-xl font-bold text-foreground">{title}</h1>
+      </motion.div>
 
       <div className="flex items-center gap-2">
         {/* Theme Toggle */}

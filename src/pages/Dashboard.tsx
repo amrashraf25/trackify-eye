@@ -7,7 +7,7 @@ import AttendanceChart from "@/components/dashboard/AttendanceChart";
 import BehaviorPieChart from "@/components/dashboard/BehaviorPieChart";
 import GradesComposition from "@/components/dashboard/GradesComposition";
 import RecentCourses from "@/components/dashboard/RecentCourses";
-import { BookOpen, AlertTriangle, Users, TrendingUp, GraduationCap, ClipboardCheck, Activity, History, TrendingDown, Brain, Scan, Eye } from "lucide-react";
+import { BookOpen, AlertTriangle, Users, TrendingUp, GraduationCap, ClipboardCheck, Activity, History, TrendingDown, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -278,46 +278,39 @@ const AdminDashboard = () => {
 
   return (
     <MainLayout title="Dashboard">
-      {/* AI Status Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass rounded-2xl p-4 mb-6 flex items-center justify-between neon-border"
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-            <Brain className="w-5 h-5 text-primary" />
+      <div className="space-y-6">
+        {/* Welcome Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-neon-cyan/10 p-6 neon-border"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" />
+          <div className="relative z-10">
+            <h2 className="text-2xl font-bold text-foreground mb-1">Welcome back 👋</h2>
+            <p className="text-sm text-muted-foreground">Here's what's happening across your institution today.</p>
           </div>
-          <div>
-            <p className="text-sm font-bold text-foreground">AI Monitoring System</p>
-            <p className="text-xs text-muted-foreground">All classrooms connected • Real-time analysis active</p>
-          </div>
+        </motion.div>
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard title="Active Courses" value={coursesCount} icon={BookOpen} color="primary" index={0} />
+          <MetricCard title="Active Alerts" value={incidentsCount} icon={AlertTriangle} color="warning" index={1} />
+          <MetricCard title="Total Students" value={studentsCount} icon={Users} color="info" index={2} />
+          <MetricCard title="Attendance Records" value={attendanceCount} icon={TrendingUp} color="success" index={3} />
         </div>
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-neon-cyan" />Face Detection</span>
-          <span className="flex items-center gap-1.5"><Scan className="w-3.5 h-3.5 text-accent" />Behavior AI</span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            Online
-          </span>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <AttendanceChart />
+          <BehaviorPieChart />
         </div>
-      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <MetricCard title="Active Courses" value={coursesCount} icon={BookOpen} trend={{ value: 0, isPositive: true }} color="primary" index={0} />
-        <MetricCard title="Active Alerts" value={incidentsCount} icon={AlertTriangle} trend={{ value: 0, isPositive: false }} color="warning" index={1} />
-        <MetricCard title="Total Students" value={studentsCount} icon={Users} trend={{ value: 0, isPositive: true }} color="info" index={2} />
-        <MetricCard title="Attendance Records" value={attendanceCount} icon={TrendingUp} trend={{ value: 0, isPositive: true }} color="success" index={3} />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <AttendanceChart />
-        <BehaviorPieChart />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <RecentCourses />
-        <GradesComposition />
+        {/* Bottom */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RecentCourses />
+          <GradesComposition />
+        </div>
       </div>
     </MainLayout>
   );
