@@ -231,9 +231,16 @@ const Behavior = () => {
                       <p className="text-xs text-muted-foreground">{selectedStudent.student_code}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end gap-2">
                     <p className={`text-3xl font-bold ${getScoreColor(getScore(selectedStudent.id))}`}>{getScore(selectedStudent.id)}%</p>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Overall Score</p>
+                    {getScore(selectedStudent.id) < 60 && (
+                      <SendBehaviorAlert
+                        studentId={selectedStudent.id}
+                        studentName={selectedStudent.full_name}
+                        score={getScore(selectedStudent.id)}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
