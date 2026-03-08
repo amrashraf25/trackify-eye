@@ -60,6 +60,20 @@ const Header = ({ title }: HeaderProps) => {
 
   const unreadCount = notifications.filter((n: any) => !n.is_read).length;
 
+  // Fetch avatar
+  const { data: avatarUrl } = useQuery({
+    queryKey: ["my-avatar", user?.id, role],
+    queryFn: async () => {
+      if (role === "student") {
+        const { data } = await supabase.from("students").select("avatar_url").eq("user_id", user?.id).single();
+        return data?.avatar_url || null;
+      }
+      const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user?.id).single();
+      return data?.avatar_url || null;
+    },
+    enabled: !!user?.id,
+  });
+
   const markAsRead = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from("notifications").update({ is_read: true }).eq("id", id);
