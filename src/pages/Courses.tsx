@@ -43,6 +43,7 @@ const Courses = () => {
   const [addOpen, setAddOpen] = useState(false);
   const [newCourse, setNewCourse] = useState({ course_code: "", name: "", description: "", credits: "3", semester: "Fall 2024" });
   const [selectedWeek, setSelectedWeek] = useState(1);
+  const [selectedBehaviorWeek, setSelectedBehaviorWeek] = useState(1);
   const [behaviorDialogOpen, setBehaviorDialogOpen] = useState(false);
   const [behaviorStudentId, setBehaviorStudentId] = useState<string | null>(null);
   const [actionType, setActionType] = useState<"positive" | "negative">("negative");
