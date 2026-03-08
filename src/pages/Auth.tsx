@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,8 @@ const demoAccounts = [
   { role: "Student", email: "student@trackify.com", password: "student123", icon: User, color: "text-emerald-500", bg: "bg-emerald-500/10" },
 ];
 
-// Aperture blade component
-const ApertureOverlay = ({ size, top, left }: { size: string; top: string; left: string }) => {
+// Aperture blade component for the camera lens eye
+const ApertureOverlay = ({ size, top, left, closing }: { size: string; top: string; left: string; closing?: boolean }) => {
   const bladeCount = 6;
   const angles = Array.from({ length: bladeCount }, (_, i) => (360 / bladeCount) * i);
 
@@ -47,15 +47,16 @@ const ApertureOverlay = ({ size, top, left }: { size: string; top: string; left:
               fill="hsl(220 15% 13%)"
               stroke="hsl(220 10% 22%)"
               strokeWidth="0.8"
-              animate={{
-                points: [openPoints, openPoints, closedPoints, closedPoints, openPoints],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-                repeatDelay: 3,
-              }}
+              animate={
+                closing
+                  ? { points: [openPoints, closedPoints] }
+                  : { points: [openPoints, openPoints, closedPoints, closedPoints, openPoints] }
+              }
+              transition={
+                closing
+                  ? { duration: 0.4, ease: "easeInOut" }
+                  : { duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 3 }
+              }
             />
           );
         })}
@@ -64,22 +65,25 @@ const ApertureOverlay = ({ size, top, left }: { size: string; top: string; left:
   );
 };
 
-// SVG Wing that expands to cover the screen
-const OwlWingSVG = ({ side }: { side: "left" | "right" }) => (
-  <svg
-    viewBox="0 0 500 800"
-    className="w-full h-full"
-    style={{ transform: side === "right" ? "scaleX(-1)" : undefined }}
+// Blue glowing eye overlay for the right eye
+const BlueEyeGlow = ({ size, top, left }: { size: string; top: string; left: string }) => (
+  <div
+    className="absolute rounded-full pointer-events-none"
+    style={{ width: size, height: size, top, left }}
   >
-    <path
-      d="M500,400 Q500,100 350,50 Q200,0 100,100 Q0,200 0,400 Q0,600 100,700 Q200,800 350,750 Q500,700 500,400Z"
-      fill="hsl(var(--background))"
+    <motion.div
+      className="w-full h-full rounded-full"
+      style={{
+        background: "radial-gradient(circle, hsl(200 100% 60% / 0.6) 0%, hsl(200 100% 50% / 0.3) 40%, transparent 70%)",
+        boxShadow: "0 0 12px 4px hsl(200 100% 60% / 0.3)",
+      }}
+      animate={{
+        opacity: [0.7, 1, 0.7],
+        scale: [0.95, 1.05, 0.95],
+      }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
     />
-    {/* Feather detail lines */}
-    <path d="M400,200 Q300,300 350,400 Q400,500 400,600" stroke="hsl(var(--primary) / 0.15)" strokeWidth="2" fill="none" />
-    <path d="M350,150 Q250,280 300,400 Q350,520 350,650" stroke="hsl(var(--primary) / 0.1)" strokeWidth="1.5" fill="none" />
-    <path d="M300,120 Q200,260 250,400 Q300,540 300,680" stroke="hsl(var(--primary) / 0.08)" strokeWidth="1" fill="none" />
-  </svg>
+  </div>
 );
 
 const Auth = () => {
@@ -88,12 +92,14 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [transitionPhase, setTransitionPhase] = useState<
-    "idle" | "fadeForm" | "flyToCenter" | "spreadWings" | "reveal"
+    "idle" | "lensClose" | "flyToCenter" | "spreadWings" | "reveal"
   >("idle");
+  // Use ref to prevent auth listener from navigating during animation
+  const isTransitioning = useRef(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && transitionPhase === "idle") {
+      if (session && !isTransitioning.current) {
         navigate("/");
       }
     });
@@ -101,12 +107,12 @@ const Auth = () => {
       if (session) navigate("/");
     });
     return () => subscription.unsubscribe();
-  }, [navigate, transitionPhase]);
+  }, [navigate]);
 
-  // Sequencer for animation phases
+  // Animation phase sequencer
   useEffect(() => {
-    if (transitionPhase === "fadeForm") {
-      const t = setTimeout(() => setTransitionPhase("flyToCenter"), 400);
+    if (transitionPhase === "lensClose") {
+      const t = setTimeout(() => setTransitionPhase("flyToCenter"), 500);
       return () => clearTimeout(t);
     }
     if (transitionPhase === "flyToCenter") {
@@ -118,7 +124,7 @@ const Auth = () => {
       return () => clearTimeout(t);
     }
     if (transitionPhase === "reveal") {
-      const t = setTimeout(() => navigate("/"), 600);
+      const t = setTimeout(() => navigate("/"), 500);
       return () => clearTimeout(t);
     }
   }, [transitionPhase, navigate]);
@@ -130,12 +136,15 @@ const Auth = () => {
       return;
     }
     setLoading(true);
+    isTransitioning.current = true;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast.error(error.message);
       setLoading(false);
+      isTransitioning.current = false;
     } else {
-      setTransitionPhase("fadeForm");
+      // Start cinematic transition
+      setTransitionPhase("lensClose");
     }
   };
 
@@ -155,99 +164,82 @@ const Auth = () => {
 
       {/* ===== TRANSITION OVERLAY ===== */}
       <AnimatePresence>
-        {isAnimating && (
+        {isAnimating && transitionPhase !== "lensClose" && (
           <div className="fixed inset-0 z-50 pointer-events-none">
             {/* Owl flying to center and growing */}
             <motion.div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
-              initial={{ scale: 1, y: -80 }}
+              className="absolute left-1/2 top-1/2 flex items-center justify-center"
+              style={{ x: "-50%", y: "-50%" }}
+              initial={{ scale: 1 }}
               animate={
-                transitionPhase === "fadeForm"
-                  ? { scale: 1.2, y: -40 }
-                  : transitionPhase === "flyToCenter"
-                  ? { scale: 2, y: 0 }
+                transitionPhase === "flyToCenter"
+                  ? { scale: 2.2 }
                   : transitionPhase === "spreadWings"
-                  ? { scale: 2.5, y: 0, opacity: 1 }
-                  : { scale: 3, y: 0, opacity: 0 }
+                  ? { scale: 2.8, opacity: 1 }
+                  : { scale: 3.5, opacity: 0 }
               }
-              transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+              transition={{ duration: 0.65, ease: [0.25, 0.1, 0.25, 1] }}
             >
-              {/* Glow behind owl */}
+              {/* Glow trail */}
               <motion.div
-                className="absolute w-64 h-64 rounded-full"
+                className="absolute w-60 h-60 rounded-full"
                 style={{
-                  background: "radial-gradient(circle, hsl(var(--primary) / 0.4) 0%, transparent 70%)",
-                  filter: "blur(30px)",
+                  background: "radial-gradient(circle, hsl(var(--primary) / 0.5) 0%, hsl(200 100% 50% / 0.2) 50%, transparent 70%)",
+                  filter: "blur(25px)",
                 }}
-                animate={
-                  transitionPhase === "flyToCenter" || transitionPhase === "spreadWings"
-                    ? { scale: [1, 2, 3], opacity: [0.5, 0.8, 0] }
-                    : { scale: 1, opacity: 0.3 }
-                }
-                transition={{ duration: 1.2 }}
+                animate={{ scale: [1, 1.8, 2.5], opacity: [0.6, 0.8, 0] }}
+                transition={{ duration: 1.5 }}
               />
               <motion.img
                 src={owlMascot}
                 alt="Trackify Owl"
                 className="w-40 h-40 object-contain relative z-10"
-                style={{
-                  filter: "drop-shadow(0 0 40px hsl(217 91% 60% / 0.5))",
-                }}
+                style={{ filter: "drop-shadow(0 0 50px hsl(200 100% 60% / 0.6))" }}
                 animate={
-                  transitionPhase === "spreadWings"
-                    ? { rotate: [0, -2, 2, 0] }
+                  transitionPhase === "flyToCenter"
+                    ? { rotate: [0, -3, 3, 0] }
                     : {}
                 }
-                transition={{ duration: 0.4 }}
+                transition={{ duration: 0.5 }}
               />
             </motion.div>
 
-            {/* Wings expanding from center to cover screen */}
+            {/* Wings expanding from center */}
             {(transitionPhase === "spreadWings" || transitionPhase === "reveal") && (
               <>
-                {/* Left Wing */}
+                {/* Left wing */}
                 <motion.div
-                  className="absolute top-0 right-1/2 h-full"
-                  style={{ width: "55%" }}
-                  initial={{ x: "90%", scaleX: 0 }}
-                  animate={
-                    transitionPhase === "spreadWings"
-                      ? { x: "0%", scaleX: 1 }
-                      : { x: "0%", scaleX: 1 }
-                  }
-                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute top-0 h-full bg-background"
+                  style={{ right: "50%", width: "55%", borderRadius: "0 40% 40% 0 / 0 50% 50% 0" }}
+                  initial={{ x: "100%", opacity: 0.8 }}
+                  animate={{ x: "0%", opacity: 1 }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <OwlWingSVG side="left" />
+                  {/* Feather texture */}
+                  <div className="absolute inset-0 opacity-10" style={{
+                    background: "repeating-linear-gradient(135deg, transparent 0px, transparent 20px, hsl(var(--primary)) 20px, hsl(var(--primary)) 21px)"
+                  }} />
                 </motion.div>
 
-                {/* Right Wing */}
+                {/* Right wing */}
                 <motion.div
-                  className="absolute top-0 left-1/2 h-full"
-                  style={{ width: "55%" }}
-                  initial={{ x: "-90%", scaleX: 0 }}
-                  animate={
-                    transitionPhase === "spreadWings"
-                      ? { x: "0%", scaleX: 1 }
-                      : { x: "0%", scaleX: 1 }
-                  }
-                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute top-0 h-full bg-background"
+                  style={{ left: "50%", width: "55%", borderRadius: "40% 0 0 40% / 50% 0 0 50%" }}
+                  initial={{ x: "-100%", opacity: 0.8 }}
+                  animate={{ x: "0%", opacity: 1 }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <OwlWingSVG side="right" />
+                  <div className="absolute inset-0 opacity-10" style={{
+                    background: "repeating-linear-gradient(-135deg, transparent 0px, transparent 20px, hsl(var(--primary)) 20px, hsl(var(--primary)) 21px)"
+                  }} />
                 </motion.div>
 
-                {/* Full background fill to ensure coverage */}
+                {/* Full coverage after wings meet */}
                 <motion.div
                   className="absolute inset-0 bg-background"
                   initial={{ opacity: 0 }}
-                  animate={
-                    transitionPhase === "spreadWings"
-                      ? { opacity: 0.6 }
-                      : { opacity: 1 }
-                  }
-                  transition={{
-                    duration: transitionPhase === "reveal" ? 0.5 : 0.6,
-                    delay: transitionPhase === "spreadWings" ? 0.3 : 0,
-                  }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4, duration: 0.4 }}
                 />
               </>
             )}
@@ -258,8 +250,12 @@ const Auth = () => {
       {/* ===== MAIN CONTENT ===== */}
       <motion.div
         className="w-full max-w-md space-y-4 relative z-10"
-        animate={isAnimating ? { opacity: 0, scale: 0.92, y: 20 } : { opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        animate={
+          isAnimating
+            ? { opacity: 0, scale: 0.9, y: 30, filter: "blur(8px)" }
+            : { opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }
+        }
+        transition={{ duration: 0.5, ease: "easeOut" }}
       >
         {/* Owl Hero */}
         <motion.div
@@ -279,7 +275,15 @@ const Auth = () => {
                 alt="Trackify Owl"
                 className="w-40 h-40 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)]"
               />
-              <ApertureOverlay size="19%" top="29%" left="19%" />
+              {/* Left eye: Camera aperture that closes on sign-in */}
+              <ApertureOverlay
+                size="19%"
+                top="29%"
+                left="19%"
+                closing={transitionPhase === "lensClose"}
+              />
+              {/* Right eye: Blue glowing eye */}
+              <BlueEyeGlow size="16%" top="30%" left="55%" />
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>
           </motion.div>
@@ -346,7 +350,7 @@ const Auth = () => {
                   </div>
                 </div>
                 <Button type="submit" className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity font-semibold" disabled={loading || isAnimating}>
-                  {loading ? (
+                  {loading && !isAnimating ? (
                     <span className="flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                       Signing in...
