@@ -17,6 +17,9 @@ const Doctors = () => {
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedCourseToAssign, setSelectedCourseToAssign] = useState("");
+  const [addDoctorOpen, setAddDoctorOpen] = useState(false);
+  const [newDoctor, setNewDoctor] = useState({ full_name: "", email: "", password: "" });
+  const [addingDoctor, setAddingDoctor] = useState(false);
   const { role } = useAuth();
   const queryClient = useQueryClient();
   const canManage = role === "admin" || role === "dean";
