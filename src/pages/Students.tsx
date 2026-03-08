@@ -31,6 +31,13 @@ const Students = () => {
   const { role } = useAuth();
   const queryClient = useQueryClient();
   const [selectedBehaviorWeek, setSelectedBehaviorWeek] = useState<number | "all">("all");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editData, setEditData] = useState({
+    full_name: "", student_code: "", email: "", phone: "", year_level: "1", status: "active"
+  });
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
+  const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null);
 
   const { data: students = [], refetch } = useQuery({
     queryKey: ["students"],
