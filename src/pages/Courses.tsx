@@ -54,9 +54,14 @@ const Courses = () => {
   const canRecord = role === "admin" || role === "dean" || role === "doctor";
 
   const { data: courses = [], refetch } = useQuery({
-    queryKey: ["courses"],
+    queryKey: ["courses", role, user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("courses").select("*").order("name");
+      let query = supabase.from("courses").select("*").order("name");
+      // Doctors can only see courses assigned to them
+      if (role === "doctor" && user?.id) {
+        query = query.eq("doctor_id", user.id);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
