@@ -177,7 +177,9 @@ const Auth = () => {
               animate={
                 transitionPhase === "flying"
                   ? { scale: [1, 1.2, 8], y: [-190, 0, 0], opacity: [1, 1, 0] }
-                  : { scale: 1, y: -190, opacity: 1 }
+                  : transitionPhase === "reveal"
+                    ? { scale: 8, y: 0, opacity: 0 }
+                    : { scale: 1, y: -190, opacity: 1 }
               }
               transition={{
                 duration: 1.3,
