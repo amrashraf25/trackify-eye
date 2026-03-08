@@ -18,54 +18,6 @@ const demoAccounts = [
   { role: "Student", email: "student@trackify.com", password: "student123", icon: User, color: "text-emerald-500", bg: "bg-emerald-500/10" },
 ];
 
-// Aperture blade component for the camera lens eye
-const ApertureOverlay = ({ size, top, left, closing, angry }: { size: string; top: string; left: string; closing?: boolean; angry?: boolean }) => {
-  const bladeCount = 6;
-  const angles = Array.from({ length: bladeCount }, (_, i) => (360 / bladeCount) * i);
-  const bladeColor = angry ? "hsl(0 80% 40%)" : "hsl(220 15% 13%)";
-  const strokeColor = angry ? "hsl(0 70% 55%)" : "hsl(220 10% 22%)";
-
-  return (
-    <div
-      className="absolute rounded-full overflow-hidden pointer-events-none"
-      style={{ width: size, height: size, top, left }}
-    >
-      <motion.svg viewBox="0 0 100 100" className="w-full h-full">
-        {angles.map((angle, i) => {
-          const rad = (a: number) => (a * Math.PI) / 180;
-          const cx = 50, cy = 50, R = 46, r = 4;
-          const openP1 = `${cx + R * Math.cos(rad(angle - 8))} ${cy + R * Math.sin(rad(angle - 8))}`;
-          const openP2 = `${cx + R * Math.cos(rad(angle + 8))} ${cy + R * Math.sin(rad(angle + 8))}`;
-          const openP3 = `${cx + R * Math.cos(rad(angle))} ${cy + R * Math.sin(rad(angle))}`;
-          const openPoints = `${openP1}, ${openP2}, ${openP3}`;
-          const closedP1 = `${cx + R * Math.cos(rad(angle - 28))} ${cy + R * Math.sin(rad(angle - 28))}`;
-          const closedP2 = `${cx + R * Math.cos(rad(angle + 28))} ${cy + R * Math.sin(rad(angle + 28))}`;
-          const closedP3 = `${cx + r * Math.cos(rad(angle))} ${cy + r * Math.sin(rad(angle))}`;
-          const closedPoints = `${closedP1}, ${closedP2}, ${closedP3}`;
-
-          return (
-            <motion.polygon
-              key={i}
-              fill={bladeColor}
-              stroke={strokeColor}
-              strokeWidth="0.8"
-              animate={
-                closing
-                  ? { points: [openPoints, closedPoints] }
-                  : { points: [openPoints, openPoints, closedPoints, closedPoints, openPoints] }
-              }
-              transition={
-                closing
-                  ? { duration: 0.4, ease: "easeInOut" }
-                  : { duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 3 }
-              }
-            />
-          );
-        })}
-      </motion.svg>
-    </div>
-  );
-};
 
 const EyeGlow = ({ size, top, left, angry }: { size: string; top: string; left: string; angry?: boolean }) => {
   const baseHue = angry ? "0" : "200";
