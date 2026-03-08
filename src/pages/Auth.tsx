@@ -281,9 +281,7 @@ const Auth = () => {
                   transition={{ duration: 2.5, ease: "easeInOut" }}
                 />
               )}
-              {/* Left eye glow */}
-              <EyeGlow size="18%" top="31%" left="24%" angry={errorFlash} />
-              {/* Right eye: Glowing eye */}
+              {/* Right eye: Glowing eye - red on invalid credentials */}
               <EyeGlow size="14%" top="32%" left="55%" angry={errorFlash} />
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>
