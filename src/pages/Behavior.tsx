@@ -110,6 +110,7 @@ const Behavior = () => {
         action_name: action.name,
         score_change: action.change,
         notes: notes || null,
+        week_number: parseInt(recordWeek),
       });
       if (error) throw error;
     },
