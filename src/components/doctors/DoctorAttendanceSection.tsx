@@ -10,11 +10,12 @@ const WEEKS = Array.from({ length: 16 }, (_, i) => i + 1);
 
 interface DoctorAttendanceSectionProps {
   doctorId: string;
+  doctorName: string;
   doctorCourses: any[];
   userId?: string;
 }
 
-const DoctorAttendanceSection = ({ doctorId, doctorCourses, userId }: DoctorAttendanceSectionProps) => {
+const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }: DoctorAttendanceSectionProps) => {
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const queryClient = useQueryClient();
 
