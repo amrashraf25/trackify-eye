@@ -81,6 +81,21 @@ const StudentDashboard = () => {
     enabled: !!student?.id,
   });
 
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["my-dashboard-notifications", student?.id],
+    queryFn: async () => {
+      if (!student?.id) return [];
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("student_id", student.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) return [];
+      return data;
+    },
+    enabled: !!student?.id,
+  });
   const score = behaviorScore?.score ?? 100;
   const presentCount = attendance.filter((a) => a.status === "present").length;
   const totalAttendance = attendance.length;
