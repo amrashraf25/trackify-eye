@@ -2,7 +2,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2, Calendar, ChevronLeft, ChevronRight, XCircle, UserPlus, Pencil } from "lucide-react";
+import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2, Calendar, ChevronLeft, ChevronRight, XCircle, UserPlus, Pencil, RotateCcw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -503,10 +503,48 @@ const Students = () => {
 
                 {/* 16-Week Behavior Breakdown */}
                 <div className="mt-4">
-                  <h4 className="font-bold text-foreground flex items-center gap-2 text-xs mb-3">
-                    <Calendar className="w-3.5 h-3.5 text-primary" />
-                    Weekly Behavior Score
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-bold text-foreground flex items-center gap-2 text-xs">
+                      <Calendar className="w-3.5 h-3.5 text-primary" />
+                      Weekly Behavior Score
+                    </h4>
+                    {canManage && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-7 text-xs rounded-lg text-muted-foreground hover:text-foreground">
+                            <RotateCcw className="w-3 h-3 mr-1" /> Reset
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Reset Behavior Score</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will delete all behavior records for <strong>{selectedStudent.full_name}</strong> and reset their score to 100%. This cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={async () => {
+                                try {
+                                  await supabase.from("behavior_records").delete().eq("student_id", selectedStudent.id);
+                                  await supabase.from("behavior_scores").update({ score: 100 }).eq("student_id", selectedStudent.id);
+                                  queryClient.invalidateQueries({ queryKey: ["behavior-scores"] });
+                                  queryClient.invalidateQueries({ queryKey: ["behavior-records"] });
+                                  toast.success("Behavior score reset to 100%");
+                                } catch (err: any) {
+                                  toast.error(err.message);
+                                }
+                              }}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Reset
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                   <div className="grid grid-cols-8 gap-1.5 mb-3">
                     {WEEKS.map((w) => {
                       const weekScore = getWeeklyScore(selectedStudent.id, w);
