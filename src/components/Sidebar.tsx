@@ -43,10 +43,7 @@ const Sidebar = () => {
           <img src={trackifyLogo} alt="Trackify Logo" className="w-10 h-10 rounded-xl object-cover ring-2 ring-primary/20" />
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-neon-cyan rounded-full border-2 border-sidebar animate-pulse" />
         </div>
-        <div>
-          <span className="text-lg font-bold text-primary-foreground tracking-tight">Trackify</span>
-          <p className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50">AI Monitoring</p>
-        </div>
+        <span className="text-lg font-bold text-primary-foreground tracking-tight">Trackify</span>
       </div>
 
       {/* Navigation */}
