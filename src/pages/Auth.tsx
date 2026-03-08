@@ -137,7 +137,7 @@ const Auth = () => {
       isTransitioning.current = false;
     } else {
       // Start cinematic transition
-      setTransitionPhase("lensClose");
+      setTransitionPhase("flying");
     }
   };
 
