@@ -704,7 +704,45 @@ const Courses = () => {
             </TabsContent>
 
             {/* ENROLLED STUDENTS TAB */}
-            <TabsContent value="students" className="mt-6">
+            <TabsContent value="students" className="mt-6 space-y-4">
+              {/* Enroll button */}
+              {canManage && (
+                <div className="flex justify-end">
+                  <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                        <UserPlus className="w-4 h-4 mr-2" />Enroll Student
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="rounded-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Enroll Student in {selectedCourse.name}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-xs uppercase tracking-wider">Select Student</Label>
+                          <Select value={studentToEnroll} onValueChange={setStudentToEnroll}>
+                            <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Choose a student..." /></SelectTrigger>
+                            <SelectContent>
+                              {getUnenrolledStudents(selectedCourse.id).map((s) => (
+                                <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.student_code})</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button
+                          onClick={() => enrollStudent.mutate({ studentId: studentToEnroll, courseId: selectedCourse.id })}
+                          disabled={!studentToEnroll}
+                          className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                        >
+                          Enroll
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
+
               <div className="space-y-3">
                 {enrolledStudents.length === 0 ? (
                   <div className="text-center py-16 text-muted-foreground">
@@ -736,14 +774,39 @@ const Courses = () => {
                         </p>
                         {student.email && <p className="text-xs text-muted-foreground/70 mt-0.5">{student.email}</p>}
                       </div>
-                      <Badge
-                        variant={student.status === "active" ? "default" : "secondary"}
-                        className={student.status === "active"
-                          ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                          : ""}
-                      >
-                        {student.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={student.status === "active" ? "default" : "secondary"}
+                          className={student.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                            : ""}
+                        >
+                          {student.status}
+                        </Badge>
+                        {canManage && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 h-8 rounded-lg text-xs">
+                                <XCircle className="w-3.5 h-3.5 mr-1" />Remove
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Student</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Remove <strong>{student.full_name}</strong> from <strong>{selectedCourse.name}</strong>?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => unenrollStudent.mutate({ studentId: student.id, courseId: selectedCourse.id })} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Remove
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </motion.div>
                   ))
                 )}
