@@ -158,6 +158,7 @@ const Auth = () => {
     }
 
     if (transitionPhase === "flying") {
+      playWhoosh();
       const t = setTimeout(() => setTransitionPhase("reveal"), 1300);
       return () => clearTimeout(t);
     }
