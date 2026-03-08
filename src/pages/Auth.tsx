@@ -235,7 +235,7 @@ const Auth = () => {
                 size="21%"
                 top="27%"
                 left="22%"
-                closing={transitionPhase === "lensClose"}
+                closing={transitionPhase === "flying"}
               />
               {/* Right eye: Blue glowing eye */}
               <BlueEyeGlow size="17%" top="27%" left="53%" />
