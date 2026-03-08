@@ -180,7 +180,7 @@ const Auth = () => {
                   : { scale: 12, opacity: 0 }
               }
               transition={{
-                duration: transitionPhase === "spreadWings" ? 0.8 : 0.7,
+                duration: transitionPhase === "spreadWings" ? 1.4 : 1.2,
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
