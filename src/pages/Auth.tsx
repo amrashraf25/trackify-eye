@@ -81,17 +81,20 @@ const Auth = () => {
                 alt="Trackify Owl"
                 className="w-40 h-40 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)]"
               />
-              {/* Camera lens aperture closing animation */}
+              {/* Camera lens shutter closing/opening */}
               <motion.div
-                className="absolute top-[26%] left-[16%] w-[28%] h-[28%] rounded-full border-[3px] border-transparent"
-                style={{ background: "radial-gradient(circle, transparent 40%, hsl(210 40% 10% / 0.95) 41%)" }}
-                initial={{ scale: 1, opacity: 0 }}
-                animate={{ 
-                  scale: [1, 0.6, 0.6, 1, 1, 1, 1, 1],
-                  opacity: [0, 1, 1, 0, 0, 0, 0, 0]
-                }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              />
+                className="absolute top-[24%] left-[14%] w-[30%] h-[30%] rounded-full overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0, 1, 1, 0, 0, 0, 0, 0, 0] }}
+                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <div className="absolute inset-0 bg-[hsl(0,0%,15%)] rounded-full" />
+                <motion.div
+                  className="absolute inset-[15%] bg-[hsl(0,0%,8%)] rounded-full"
+                  animate={{ scale: [1, 0.3, 0.3, 1, 1, 1, 1, 1, 1, 1] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                />
+              </motion.div>
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>
           </motion.div>
