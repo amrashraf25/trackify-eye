@@ -35,9 +35,15 @@ const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }
 
   const markAttendance = useMutation({
     mutationFn: async ({ courseId, weekNumber, status }: { courseId: string; weekNumber: number; status: string }) => {
-      const existing = attendance.find(
-        (a) => a.course_id === courseId && a.week_number === weekNumber
-      );
+      // Fetch fresh data to avoid stale closure
+      const { data: freshAttendance } = await supabase
+        .from("doctor_attendance")
+        .select("*")
+        .eq("doctor_id", doctorId)
+        .eq("course_id", courseId)
+        .eq("week_number", weekNumber);
+
+      const existing = freshAttendance?.[0];
 
       if (existing) {
         if (existing.status === status) {
