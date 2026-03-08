@@ -50,6 +50,8 @@ const Courses = () => {
   const [actionType, setActionType] = useState<"positive" | "negative">("negative");
   const [selectedAction, setSelectedAction] = useState("");
   const [behaviorNotes, setBehaviorNotes] = useState("");
+  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
+  const [studentToEnroll, setStudentToEnroll] = useState("");
   const { role, user } = useAuth();
   const queryClient = useQueryClient();
 
