@@ -19,9 +19,11 @@ const demoAccounts = [
 ];
 
 // Aperture blade component for the camera lens eye
-const ApertureOverlay = ({ size, top, left, closing }: { size: string; top: string; left: string; closing?: boolean }) => {
+const ApertureOverlay = ({ size, top, left, closing, angry }: { size: string; top: string; left: string; closing?: boolean; angry?: boolean }) => {
   const bladeCount = 6;
   const angles = Array.from({ length: bladeCount }, (_, i) => (360 / bladeCount) * i);
+  const bladeColor = angry ? "hsl(0 80% 40%)" : "hsl(220 15% 13%)";
+  const strokeColor = angry ? "hsl(0 70% 55%)" : "hsl(220 10% 22%)";
 
   return (
     <div
@@ -44,8 +46,8 @@ const ApertureOverlay = ({ size, top, left, closing }: { size: string; top: stri
           return (
             <motion.polygon
               key={i}
-              fill="hsl(220 15% 13%)"
-              stroke="hsl(220 10% 22%)"
+              fill={bladeColor}
+              stroke={strokeColor}
               strokeWidth="0.8"
               animate={
                 closing
