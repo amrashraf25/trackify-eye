@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, User, TrendingDown, TrendingUp, Plus, History, AlertTriangle, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, User, TrendingDown, TrendingUp, Plus, History, AlertTriangle, Calendar, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+import SendBehaviorAlert from "@/components/SendBehaviorAlert";
 
 const negativeActions = [
   { name: "Smoking during lecture", change: -15 },
@@ -230,9 +231,16 @@ const Behavior = () => {
                       <p className="text-xs text-muted-foreground">{selectedStudent.student_code}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end gap-2">
                     <p className={`text-3xl font-bold ${getScoreColor(getScore(selectedStudent.id))}`}>{getScore(selectedStudent.id)}%</p>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Overall Score</p>
+                    {getScore(selectedStudent.id) < 60 && (
+                      <SendBehaviorAlert
+                        studentId={selectedStudent.id}
+                        studentName={selectedStudent.full_name}
+                        score={getScore(selectedStudent.id)}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

@@ -8,7 +8,7 @@ import AttendanceChart from "@/components/dashboard/AttendanceChart";
 import BehaviorPieChart from "@/components/dashboard/BehaviorPieChart";
 import GradesComposition from "@/components/dashboard/GradesComposition";
 import RecentCourses from "@/components/dashboard/RecentCourses";
-import { BookOpen, AlertTriangle, Users, TrendingUp, GraduationCap, ClipboardCheck, Activity, History, TrendingDown, Shield } from "lucide-react";
+import { BookOpen, AlertTriangle, Users, TrendingUp, GraduationCap, ClipboardCheck, Activity, History, TrendingDown, Shield, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -81,6 +81,21 @@ const StudentDashboard = () => {
     enabled: !!student?.id,
   });
 
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["my-dashboard-notifications", student?.id],
+    queryFn: async () => {
+      if (!student?.id) return [];
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("student_id", student.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (error) return [];
+      return data;
+    },
+    enabled: !!student?.id,
+  });
   const score = behaviorScore?.score ?? 100;
   const presentCount = attendance.filter((a) => a.status === "present").length;
   const totalAttendance = attendance.length;
@@ -200,6 +215,39 @@ const StudentDashboard = () => {
             </div>
           </motion.div>
         </div>
+
+        {/* Notifications */}
+        {notifications.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+            className="glass rounded-2xl p-5 border border-destructive/20">
+            <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+              <Bell className="w-4 h-4 text-destructive" />
+              Recent Alerts
+              <Badge className="bg-destructive/10 text-destructive text-[10px] ml-1">
+                {notifications.filter((n: any) => !n.is_read).length} new
+              </Badge>
+            </h3>
+            <div className="space-y-2">
+              {notifications.map((notif: any) => (
+                <div key={notif.id} className={`flex items-start gap-3 p-3 rounded-xl transition-colors ${
+                  notif.is_read ? "bg-secondary/20" : "bg-destructive/5 border border-destructive/10"
+                }`}>
+                  <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{notif.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.message}</p>
+                    <p className="text-[10px] text-muted-foreground/60 mt-1">
+                      {format(new Date(notif.created_at), "MMM dd, yyyy • HH:mm")}
+                    </p>
+                  </div>
+                  {!notif.is_read && <span className="w-2 h-2 rounded-full bg-destructive shrink-0 mt-1.5" />}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Grades */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
