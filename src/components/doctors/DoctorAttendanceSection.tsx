@@ -78,11 +78,12 @@ const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }
     ? filteredRecords.filter((a) => a.week_number === parseInt(selectedWeek))
     : filteredRecords;
 
-  // Stats
-  const totalRecords = filteredRecords.length;
-  const presentCount = filteredRecords.filter((a) => a.status === "present").length;
-  const absentCount = filteredRecords.filter((a) => a.status === "absent").length;
-  const lateCount = filteredRecords.filter((a) => a.status === "late").length;
+  // Stats - use week-filtered records when a week is selected
+  const statsRecords = selectedWeek !== "all" ? weekFilteredRecords : filteredRecords;
+  const totalRecords = statsRecords.length;
+  const presentCount = statsRecords.filter((a) => a.status === "present").length;
+  const absentCount = statsRecords.filter((a) => a.status === "absent").length;
+  const lateCount = statsRecords.filter((a) => a.status === "late").length;
   const attendanceRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0;
 
   const selectedCourseName = selectedCourseId !== "all"
