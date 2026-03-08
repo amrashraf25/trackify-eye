@@ -290,6 +290,16 @@ const Behavior = () => {
                         </Select>
                       </div>
                       <div>
+                        <Label>Week</Label>
+                        <Select value={recordWeek} onValueChange={setRecordWeek}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {weeks.map((w) => (
+                              <SelectItem key={w} value={String(w)}>Week {w}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      <div>
                         <Label>Notes (optional)</Label>
                         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add notes..." />
                       </div>
