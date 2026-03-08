@@ -1,4 +1,4 @@
-import { Bell, User, Sun, Moon, Cpu } from "lucide-react";
+import { Bell, User, Sun, Moon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
