@@ -113,19 +113,19 @@ const Auth = () => {
   // Animation phase sequencer
   useEffect(() => {
     if (transitionPhase === "lensClose") {
-      const t = setTimeout(() => setTransitionPhase("flyToCenter"), 500);
+      const t = setTimeout(() => setTransitionPhase("flyToCenter"), 600);
       return () => clearTimeout(t);
     }
     if (transitionPhase === "flyToCenter") {
-      const t = setTimeout(() => setTransitionPhase("spreadWings"), 700);
+      const t = setTimeout(() => setTransitionPhase("spreadWings"), 1200);
       return () => clearTimeout(t);
     }
     if (transitionPhase === "spreadWings") {
-      const t = setTimeout(() => setTransitionPhase("reveal"), 800);
+      const t = setTimeout(() => setTransitionPhase("reveal"), 1400);
       return () => clearTimeout(t);
     }
     if (transitionPhase === "reveal") {
-      const t = setTimeout(() => navigate("/"), 500);
+      const t = setTimeout(() => navigate("/"), 600);
       return () => clearTimeout(t);
     }
   }, [transitionPhase, navigate]);
@@ -180,7 +180,7 @@ const Auth = () => {
                   : { scale: 12, opacity: 0 }
               }
               transition={{
-                duration: transitionPhase === "spreadWings" ? 0.8 : 0.7,
+                duration: transitionPhase === "spreadWings" ? 1.4 : 1.2,
                 ease: [0.16, 1, 0.3, 1],
               }}
             >
