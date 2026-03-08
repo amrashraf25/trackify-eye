@@ -1,5 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 interface MetricCardProps {
   title: string;
@@ -11,6 +12,7 @@ interface MetricCardProps {
   };
   color?: "primary" | "success" | "warning" | "info";
   index?: number;
+  linkTo?: string;
 }
 
 const colorClasses = {
@@ -36,15 +38,17 @@ const colorClasses = {
   },
 };
 
-const MetricCard = ({ title, value, icon: Icon, trend, color = "primary", index = 0 }: MetricCardProps) => {
+const MetricCard = ({ title, value, icon: Icon, trend, color = "primary", index = 0, linkTo }: MetricCardProps) => {
   const styles = colorClasses[color];
-  
+  const navigate = useNavigate();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.4 }}
-      className={`glass rounded-2xl p-5 ${styles.border} ${styles.glow} transition-all duration-300 hover-lift cursor-default`}
+      onClick={() => linkTo && navigate(linkTo)}
+      className={`glass rounded-2xl p-5 ${styles.border} ${styles.glow} transition-all duration-300 hover-lift ${linkTo ? "cursor-pointer" : "cursor-default"}`}
     >
       <div className="flex items-start justify-between">
         <div>
@@ -60,6 +64,9 @@ const MetricCard = ({ title, value, icon: Icon, trend, color = "primary", index 
           <Icon className="w-6 h-6" />
         </div>
       </div>
+      {linkTo && (
+        <p className="text-[10px] text-muted-foreground/60 mt-3 uppercase tracking-wider">Click to view →</p>
+      )}
     </motion.div>
   );
 };
