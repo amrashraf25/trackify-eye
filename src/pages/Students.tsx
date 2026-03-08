@@ -639,6 +639,32 @@ const Students = () => {
                       </p>
                     </div>
                   )}
+
+                  {/* Per-course breakdown when "All" is selected */}
+                  {selectedBehaviorCourse === "all" && getStudentCourses(selectedStudent.id).length > 0 && (
+                    <div className="bg-secondary/30 rounded-xl p-3 space-y-2">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Per Course</p>
+                      {getStudentCourses(selectedStudent.id).map((course) => {
+                        const courseScore = selectedBehaviorWeek !== "all"
+                          ? getWeeklyScore(selectedStudent.id, selectedBehaviorWeek, course.id)
+                          : getOverallScore(selectedStudent.id, course.id);
+                        const courseRecordCount = selectedBehaviorWeek !== "all"
+                          ? getWeekRecordCount(selectedStudent.id, selectedBehaviorWeek, course.id)
+                          : behaviorRecords.filter(r => r.student_id === selectedStudent.id && r.course_id === course.id).length;
+                        return (
+                          <div key={course.id} className="flex items-center gap-2">
+                            <span className="text-[10px] font-medium text-foreground w-16 truncate">{course.course_code}</span>
+                            <div className="relative h-1.5 flex-1 rounded-full bg-secondary overflow-hidden">
+                              <div className={`h-full rounded-full transition-all ${getProgressColor(courseScore)}`} style={{ width: `${courseScore}%` }} />
+                            </div>
+                            <span className={`text-[10px] font-bold w-8 text-right ${courseRecordCount > 0 ? getScoreColor(courseScore) : "text-muted-foreground"}`}>
+                              {courseRecordCount > 0 ? `${courseScore}%` : "—"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {selectedStudent.email && (
