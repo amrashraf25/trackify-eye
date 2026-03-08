@@ -277,13 +277,13 @@ const Auth = () => {
               />
               {/* Left eye: Camera aperture that closes on sign-in */}
               <ApertureOverlay
-                size="19%"
-                top="29%"
-                left="19%"
+                size="21%"
+                top="27%"
+                left="22%"
                 closing={transitionPhase === "lensClose"}
               />
               {/* Right eye: Blue glowing eye */}
-              <BlueEyeGlow size="16%" top="30%" left="55%" />
+              <BlueEyeGlow size="17%" top="27%" left="53%" />
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>
           </motion.div>
