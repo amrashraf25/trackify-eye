@@ -503,9 +503,9 @@ const Students = () => {
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Year Level</p>
                     <p className="text-xl font-bold text-foreground">{selectedStudent.year_level}</p>
                   </div>
-                  <div className="bg-secondary/30 rounded-xl p-3">
+                   <div className="bg-secondary/30 rounded-xl p-3">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Overall Behavior</p>
-                    <p className={`text-xl font-bold ${getScoreColor(getOverallScore(selectedStudent.id))}`}>{getOverallScore(selectedStudent.id)}%</p>
+                    <p className={`text-xl font-bold ${getScoreColor(getOverallScore(selectedStudent.id, selectedBehaviorCourse))}`}>{getOverallScore(selectedStudent.id, selectedBehaviorCourse)}%</p>
                   </div>
                 </div>
 
