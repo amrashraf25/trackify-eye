@@ -421,7 +421,7 @@ const Students = () => {
                         </div>
                         <div>
                           <p className="font-semibold text-foreground text-sm">{student.full_name}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono">
+                          <p className="text-[10px] text-muted-foreground font-mono truncate max-w-[200px]">
                             {student.student_code} • Year {student.year_level} • {studentCourses.length} courses
                           </p>
                         </div>
