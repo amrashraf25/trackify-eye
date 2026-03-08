@@ -2,12 +2,13 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, BookOpen, Users, Plus, GraduationCap, CheckCircle, XCircle, Clock, User, TrendingDown, TrendingUp, History, ChevronLeft, Sparkles, Calendar, Award } from "lucide-react";
+import { Search, BookOpen, Users, Plus, GraduationCap, CheckCircle, XCircle, Clock, User, TrendingDown, TrendingUp, History, ChevronLeft, Sparkles, Calendar, Award, Trash2, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,6 +50,8 @@ const Courses = () => {
   const [actionType, setActionType] = useState<"positive" | "negative">("negative");
   const [selectedAction, setSelectedAction] = useState("");
   const [behaviorNotes, setBehaviorNotes] = useState("");
+  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
+  const [studentToEnroll, setStudentToEnroll] = useState("");
   const { role, user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -275,6 +278,55 @@ const Courses = () => {
     }
   };
 
+  const deleteCourse = useMutation({
+    mutationFn: async (courseId: string) => {
+      await supabase.from("enrollments").delete().eq("course_id", courseId);
+      await supabase.from("attendance_records").delete().eq("course_id", courseId);
+      await supabase.from("behavior_records").delete().eq("course_id", courseId);
+      const { error } = await supabase.from("courses").delete().eq("id", courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      toast.success("Course deleted successfully");
+      setSelectedCourseId(null);
+      refetch();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const enrollStudent = useMutation({
+    mutationFn: async ({ studentId, courseId }: { studentId: string; courseId: string }) => {
+      const { error } = await supabase.from("enrollments").insert({ student_id: studentId, course_id: courseId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      toast.success("Student enrolled successfully");
+      setEnrollDialogOpen(false);
+      setStudentToEnroll("");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const unenrollStudent = useMutation({
+    mutationFn: async ({ studentId, courseId }: { studentId: string; courseId: string }) => {
+      const { error } = await supabase.from("enrollments").delete().eq("student_id", studentId).eq("course_id", courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      toast.success("Student unenrolled");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const getUnenrolledStudents = (courseId: string) => {
+    const enrolledIds = enrollments.filter((e) => e.course_id === courseId).map((e) => e.student_id);
+    return students.filter((s) => !enrolledIds.includes(s.id));
+  };
+
   const getStatusBadge = (status: string | null) => {
     if (!status) return <Badge variant="secondary" className="text-xs">Not Marked</Badge>;
     if (status === "present") return <Badge className="bg-emerald-500/10 text-emerald-500 text-xs">Present</Badge>;
@@ -318,9 +370,34 @@ const Courses = () => {
                   <span>{selectedCourse.semester}</span>
                 </p>
               </div>
-              <Badge className="bg-primary/10 text-primary border border-primary/20 text-sm px-3 py-1 shrink-0">
-                <Users className="w-3.5 h-3.5 mr-1.5" />{enrolledStudents.length} Students
-              </Badge>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge className="bg-primary/10 text-primary border border-primary/20 text-sm px-3 py-1">
+                  <Users className="w-3.5 h-3.5 mr-1.5" />{enrolledStudents.length} Students
+                </Badge>
+                {canManage && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="icon" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Course</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete <strong>{selectedCourse.name}</strong>? This will also remove all enrollments, attendance records, and behavior records for this course. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteCourse.mutate(selectedCourse.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -627,7 +704,45 @@ const Courses = () => {
             </TabsContent>
 
             {/* ENROLLED STUDENTS TAB */}
-            <TabsContent value="students" className="mt-6">
+            <TabsContent value="students" className="mt-6 space-y-4">
+              {/* Enroll button */}
+              {canManage && (
+                <div className="flex justify-end">
+                  <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                        <UserPlus className="w-4 h-4 mr-2" />Enroll Student
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="rounded-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Enroll Student in {selectedCourse.name}</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label className="text-xs uppercase tracking-wider">Select Student</Label>
+                          <Select value={studentToEnroll} onValueChange={setStudentToEnroll}>
+                            <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Choose a student..." /></SelectTrigger>
+                            <SelectContent>
+                              {getUnenrolledStudents(selectedCourse.id).map((s) => (
+                                <SelectItem key={s.id} value={s.id}>{s.full_name} ({s.student_code})</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <Button
+                          onClick={() => enrollStudent.mutate({ studentId: studentToEnroll, courseId: selectedCourse.id })}
+                          disabled={!studentToEnroll}
+                          className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"
+                        >
+                          Enroll
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
+
               <div className="space-y-3">
                 {enrolledStudents.length === 0 ? (
                   <div className="text-center py-16 text-muted-foreground">
@@ -659,14 +774,39 @@ const Courses = () => {
                         </p>
                         {student.email && <p className="text-xs text-muted-foreground/70 mt-0.5">{student.email}</p>}
                       </div>
-                      <Badge
-                        variant={student.status === "active" ? "default" : "secondary"}
-                        className={student.status === "active"
-                          ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                          : ""}
-                      >
-                        {student.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={student.status === "active" ? "default" : "secondary"}
+                          className={student.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                            : ""}
+                        >
+                          {student.status}
+                        </Badge>
+                        {canManage && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 h-8 rounded-lg text-xs">
+                                <XCircle className="w-3.5 h-3.5 mr-1" />Remove
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Student</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Remove <strong>{student.full_name}</strong> from <strong>{selectedCourse.name}</strong>?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => unenrollStudent.mutate({ studentId: student.id, courseId: selectedCourse.id })} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Remove
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </motion.div>
                   ))
                 )}

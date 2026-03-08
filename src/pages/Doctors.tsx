@@ -2,11 +2,12 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Users, Stethoscope, Plus, Link2 } from "lucide-react";
+import { Search, User, BookOpen, Users, Stethoscope, Plus, Link2, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -108,6 +109,23 @@ const Doctors = () => {
     }
   };
 
+  const deleteDoctor = useMutation({
+    mutationFn: async (doctorId: string) => {
+      // Unassign courses first
+      await supabase.from("courses").update({ doctor_id: null }).eq("doctor_id", doctorId);
+      // Delete profile
+      const { error } = await supabase.from("profiles").delete().eq("id", doctorId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["doctors-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["doctor-courses"] });
+      toast.success("Doctor deleted successfully");
+      setSelectedDoctorId(null);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <MainLayout title="Doctors">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -188,11 +206,34 @@ const Doctors = () => {
                       <User className="w-8 h-8 text-primary" />
                     )}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-xl font-bold text-foreground">{selectedDoctor.full_name}</h3>
                     <p className="text-xs text-muted-foreground font-mono">{selectedDoctor.email}</p>
                     <Badge className="mt-1 capitalize text-[10px] bg-primary/10 text-primary">{selectedDoctor.role}</Badge>
                   </div>
+                  {canManage && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Doctor</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete <strong>{selectedDoctor.full_name}</strong>? Their courses will be unassigned. This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteDoctor.mutate(selectedDoctor.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

@@ -1,12 +1,13 @@
 import MainLayout from "@/components/layout/MainLayout";
 import { useState, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash } from "lucide-react";
+import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ const Students = () => {
     full_name: "", email: "", student_code: "", year_level: "1", phone: "", password: ""
   });
   const { role } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: students = [], refetch } = useQuery({
     queryKey: ["students"],
@@ -151,6 +153,24 @@ const Students = () => {
   };
 
   const canManage = role === "admin" || role === "dean";
+
+  const deleteStudent = useMutation({
+    mutationFn: async (studentId: string) => {
+      await supabase.from("enrollments").delete().eq("student_id", studentId);
+      await supabase.from("attendance_records").delete().eq("student_id", studentId);
+      await supabase.from("behavior_records").delete().eq("student_id", studentId);
+      await supabase.from("behavior_scores").delete().eq("student_id", studentId);
+      const { error } = await supabase.from("students").delete().eq("id", studentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast.success("Student deleted successfully");
+      setSelectedStudentId(null);
+      refetch();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
 
   return (
     <MainLayout title="Students">
@@ -297,13 +317,36 @@ const Students = () => {
                       <User className="w-8 h-8 text-primary" />
                     )}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-lg font-bold text-foreground">{selectedStudent.full_name}</h3>
                     <p className="text-xs text-muted-foreground font-mono">{selectedStudent.student_code}</p>
                     <Badge variant={selectedStudent.status === "active" ? "default" : "secondary"} className="mt-1 text-[10px]">
                       {selectedStudent.status}
                     </Badge>
                   </div>
+                  {canManage && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete <strong>{selectedStudent.full_name}</strong>? This will remove all their enrollments, attendance, and behavior records. This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteStudent.mutate(selectedStudent.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
