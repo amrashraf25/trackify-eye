@@ -9,7 +9,6 @@ import { Mail, Lock, Shield, User, Stethoscope, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import owlMascot from "@/assets/owl_mascot.png";
-import owlFlying from "@/assets/owl_flying.png";
 import { motion, AnimatePresence } from "framer-motion";
 
 const demoAccounts = [
