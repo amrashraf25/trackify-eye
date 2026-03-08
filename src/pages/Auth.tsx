@@ -211,7 +211,7 @@ const Auth = () => {
         className="w-full max-w-md space-y-4 relative z-10"
         animate={
           isAnimating
-            ? { opacity: 0, scale: 0.9, y: 30, filter: "blur(8px)" }
+            ? { opacity: 1, scale: 1, y: 0, filter: "blur(2px)" }
             : { opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }
         }
         transition={{ duration: 0.5, ease: "easeOut" }}
