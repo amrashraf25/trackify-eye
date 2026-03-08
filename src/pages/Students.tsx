@@ -2,7 +2,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2 } from "lucide-react";
+import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Users } from "lucide-react";
 import { motion } from "framer-motion";
+
+const WEEKS = Array.from({ length: 16 }, (_, i) => i + 1);
 
 const Students = () => {
   const [searchQuery, setSearchQuery] = useState("");
