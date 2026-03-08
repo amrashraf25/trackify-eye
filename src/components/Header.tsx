@@ -218,9 +218,12 @@ const Header = ({ title }: HeaderProps) => {
               </Badge>
             )}
           </div>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/20">
-            <User className="w-4 h-4 text-primary" />
-          </div>
+          <Avatar className="w-9 h-9 rounded-xl border border-primary/20">
+            <AvatarImage src={avatarUrl || undefined} className="object-cover rounded-xl" />
+            <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary text-xs font-bold">
+              {user?.user_metadata?.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || <User className="w-4 h-4" />}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </div>
     </header>
