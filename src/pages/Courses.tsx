@@ -111,6 +111,23 @@ const Courses = () => {
     },
   });
 
+  // Fetch all behavior records for the selected week + course (for all students)
+  const { data: weeklyBehaviorRecords = [] } = useQuery({
+    queryKey: ["weekly-behavior-records", selectedCourseId, selectedBehaviorWeek],
+    queryFn: async () => {
+      if (!selectedCourseId) return [];
+      const { data, error } = await supabase
+        .from("behavior_records")
+        .select("*")
+        .eq("course_id", selectedCourseId)
+        .eq("week_number", selectedBehaviorWeek)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCourseId,
+  });
+
   const { data: behaviorHistory = [] } = useQuery({
     queryKey: ["behavior-history-course", selectedCourseId, behaviorStudentId, selectedBehaviorWeek],
     queryFn: async () => {
