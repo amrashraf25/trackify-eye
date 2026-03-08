@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MetricCard from "@/components/dashboard/MetricCard";
-import { BookOpen, Users, ClipboardCheck, AlertTriangle, GraduationCap, ArrowRight } from "lucide-react";
+import { BookOpen, Users, ClipboardCheck, AlertTriangle, GraduationCap, ArrowRight, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import SendBehaviorAlert from "@/components/SendBehaviorAlert";
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
@@ -71,6 +72,18 @@ const DoctorDashboard = () => {
       if (error) return 0;
       return count || 0;
     },
+  });
+
+  // Get behavior scores for doctor's students
+  const { data: behaviorScores = [] } = useQuery({
+    queryKey: ["doctor-behavior-scores", courseIds],
+    queryFn: async () => {
+      if (courseIds.length === 0) return [];
+      const { data, error } = await supabase.from("behavior_scores").select("*");
+      if (error) return [];
+      return data;
+    },
+    enabled: courseIds.length > 0,
   });
 
   // Deduplicate students
@@ -242,6 +255,89 @@ const DoctorDashboard = () => {
               })}
             </div>
           )}
+        </motion.div>
+
+        {/* Behavior Overview */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+          className="glass rounded-2xl p-5"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+              <TrendingDown className="w-4 h-4 text-destructive" />
+              Behavior Tracking
+            </h3>
+            <span
+              onClick={() => navigate("/behavior")}
+              className="text-xs text-primary cursor-pointer hover:underline font-medium flex items-center gap-1"
+            >
+              View All <ArrowRight className="w-3 h-3" />
+            </span>
+          </div>
+          {(() => {
+            const studentsWithScores = uniqueStudents.map((student: any) => {
+              const scoreEntry = behaviorScores.find((s) => s.student_id === student.id);
+              return { ...student, score: scoreEntry?.score ?? 100 };
+            }).sort((a: any, b: any) => a.score - b.score);
+
+            const lowScoreStudents = studentsWithScores.filter((s: any) => s.score < 60);
+
+            return (
+              <div className="space-y-3">
+                {lowScoreStudents.length > 0 && (
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 flex items-center gap-2 mb-3">
+                    <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+                    <p className="text-xs text-foreground">
+                      <span className="font-semibold">{lowScoreStudents.length}</span> student(s) with low behavior scores
+                    </p>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[350px] overflow-y-auto">
+                  {studentsWithScores.map((student: any, i: number) => {
+                    const scoreColor = student.score >= 80 ? "text-emerald-500" : student.score >= 60 ? "text-amber-500" : "text-destructive";
+                    const progressColor = student.score >= 80 ? "bg-emerald-500" : student.score >= 60 ? "bg-amber-500" : "bg-destructive";
+                    return (
+                      <motion.div
+                        key={student.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.8 + i * 0.03 }}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                      >
+                        <Avatar className="w-9 h-9">
+                          <AvatarImage src={student.avatar_url} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                            {student.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{student.full_name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="relative h-1.5 flex-1 rounded-full bg-secondary overflow-hidden">
+                              <div className={`h-full rounded-full ${progressColor}`} style={{ width: `${student.score}%` }} />
+                            </div>
+                            <span className={`text-xs font-bold ${scoreColor}`}>{student.score}%</span>
+                          </div>
+                        </div>
+                        {student.score < 60 && (
+                          <SendBehaviorAlert
+                            studentId={student.id}
+                            studentName={student.full_name}
+                            score={student.score}
+                          />
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+                {studentsWithScores.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-6">No students enrolled in your courses yet.</p>
+                )}
+              </div>
+            );
+          })()}
         </motion.div>
       </div>
     </MainLayout>

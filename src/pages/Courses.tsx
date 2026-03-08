@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
+import SendBehaviorAlert from "@/components/SendBehaviorAlert";
 
 const negativeActions = [
   { name: "Smoking during lecture", change: -15 },
@@ -608,6 +609,13 @@ const Courses = () => {
                           </div>
                           {canRecord && (
                             <div className="flex gap-1.5 shrink-0">
+                              {getScore(student.id) < 60 && (
+                                <SendBehaviorAlert
+                                  studentId={student.id}
+                                  studentName={student.full_name}
+                                  score={getScore(student.id)}
+                                />
+                              )}
                               <Button size="sm" variant="outline" className="h-9 text-xs rounded-xl border-border/50 hover:border-primary/40 hover:bg-primary/10"
                                 onClick={() => { setBehaviorStudentId(student.id); setBehaviorDialogOpen(true); }}>
                                 <Plus className="w-3.5 h-3.5 mr-1" />Record
