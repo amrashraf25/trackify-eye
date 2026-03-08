@@ -255,7 +255,7 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId, doctorCourses }: 
       </div>
 
       {/* Score display */}
-      <div className="flex items-center gap-4 mb-5 p-4 bg-secondary/30 rounded-xl">
+      <div className="mb-5 p-4 bg-secondary/30 rounded-xl space-y-3">
         <div className="flex-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
             {selectedCourseName ? `${selectedCourseName} Score` : selectedWeek !== "all" ? `Week ${selectedWeek} Score` : "Overall Score"}
@@ -267,6 +267,39 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId, doctorCourses }: 
             <span className={`text-xl font-bold ${scoreColor}`}>{displayScore}%</span>
           </div>
         </div>
+
+        {/* Per-course breakdown when "All" is selected */}
+        {selectedCourseId === "all" && doctorCourses.length > 0 && (
+          <div className="border-t border-border/20 pt-3 space-y-2">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Per Course</p>
+            {doctorCourses.map((course) => {
+              let courseRecords = records.filter((r: any) => r.course_id === course.id);
+              if (selectedWeek !== "all") {
+                courseRecords = courseRecords.filter((r: any) => r.week_number === parseInt(selectedWeek));
+              }
+              const courseScore = courseRecords.length > 0
+                ? Math.max(0, Math.min(100, 100 + courseRecords.reduce((sum: number, r: any) => sum + r.score_change, 0)))
+                : 100;
+              const courseColor = courseRecords.length > 0
+                ? (courseScore >= 80 ? "bg-emerald-500" : courseScore >= 60 ? "bg-amber-500" : "bg-destructive")
+                : "bg-secondary";
+              const courseTextColor = courseRecords.length > 0
+                ? (courseScore >= 80 ? "text-emerald-500" : courseScore >= 60 ? "text-amber-500" : "text-destructive")
+                : "text-muted-foreground";
+              return (
+                <div key={course.id} className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-foreground w-16 truncate">{course.course_code}</span>
+                  <div className="relative h-1.5 flex-1 rounded-full bg-secondary overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${courseColor}`} style={{ width: `${courseScore}%` }} />
+                  </div>
+                  <span className={`text-[10px] font-bold w-8 text-right ${courseTextColor}`}>
+                    {courseRecords.length > 0 ? `${courseScore}%` : "—"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* History */}
