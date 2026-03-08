@@ -2,7 +2,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Users, Stethoscope, Plus, Link2 } from "lucide-react";
+import { Search, User, BookOpen, Users, Stethoscope, Plus, Link2, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
