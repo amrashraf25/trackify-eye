@@ -27,6 +27,7 @@ const Students = () => {
     full_name: "", email: "", student_code: "", year_level: "1", phone: "", password: ""
   });
   const { role } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: students = [], refetch } = useQuery({
     queryKey: ["students"],
