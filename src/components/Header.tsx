@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Badge } from "./ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,6 +58,20 @@ const Header = ({ title }: HeaderProps) => {
   }, [role, user?.id, queryClient]);
 
   const unreadCount = notifications.filter((n: any) => !n.is_read).length;
+
+  // Fetch avatar
+  const { data: avatarUrl } = useQuery({
+    queryKey: ["my-avatar", user?.id, role],
+    queryFn: async () => {
+      if (role === "student") {
+        const { data } = await supabase.from("students").select("avatar_url").eq("user_id", user?.id).single();
+        return data?.avatar_url || null;
+      }
+      const { data } = await supabase.from("profiles").select("avatar_url").eq("id", user?.id).single();
+      return data?.avatar_url || null;
+    },
+    enabled: !!user?.id,
+  });
 
   const markAsRead = useMutation({
     mutationFn: async (id: string) => {
@@ -202,9 +217,12 @@ const Header = ({ title }: HeaderProps) => {
               </Badge>
             )}
           </div>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/20">
-            <User className="w-4 h-4 text-primary" />
-          </div>
+          <Avatar className="w-9 h-9 rounded-xl border border-primary/20">
+            <AvatarImage src={avatarUrl || undefined} className="object-cover rounded-xl" />
+            <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary text-xs font-bold">
+              {user?.user_metadata?.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || <User className="w-4 h-4" />}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </div>
     </header>
