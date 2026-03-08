@@ -89,7 +89,14 @@ const Students = () => {
     return courses.filter((c) => courseIds.includes(c.id));
   };
 
-  const getOverallScore = (studentId: string) => behaviorScores.find((s) => s.student_id === studentId)?.score ?? 100;
+  const getOverallScore = (studentId: string) => {
+    // Average of all 16 weekly scores
+    let totalScore = 0;
+    for (const w of WEEKS) {
+      totalScore += getWeeklyScore(studentId, w);
+    }
+    return Math.round(totalScore / 16);
+  };
 
   const getWeeklyScore = (studentId: string, week: number) => {
     const records = behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week);
@@ -100,11 +107,6 @@ const Students = () => {
 
   const getWeekRecordCount = (studentId: string, week: number) =>
     behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week).length;
-
-  const getDisplayScore = (studentId: string) => {
-    if (selectedBehaviorWeek === "all") return getOverallScore(studentId);
-    return getWeeklyScore(studentId, selectedBehaviorWeek);
-  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-500";
