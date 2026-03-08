@@ -81,12 +81,16 @@ const Auth = () => {
                 alt="Trackify Owl"
                 className="w-40 h-40 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)]"
               />
-              {/* Winking eyelid overlay on the camera lens eye */}
+              {/* Camera lens aperture closing animation */}
               <motion.div
-                className="absolute top-[28%] left-[18%] w-[30%] h-[22%] bg-[hsl(210,40%,15%)] rounded-b-full origin-top"
-                initial={{ scaleY: 0 }}
-                animate={{ scaleY: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-[26%] left-[16%] w-[28%] h-[28%] rounded-full border-[3px] border-transparent"
+                style={{ background: "radial-gradient(circle, transparent 40%, hsl(210 40% 10% / 0.95) 41%)" }}
+                initial={{ scale: 1, opacity: 0 }}
+                animate={{ 
+                  scale: [1, 0.6, 0.6, 1, 1, 1, 1, 1],
+                  opacity: [0, 1, 1, 0, 0, 0, 0, 0]
+                }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
               />
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>

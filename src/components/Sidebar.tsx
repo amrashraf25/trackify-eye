@@ -2,7 +2,7 @@ import { BookOpen, Users, Stethoscope, AlertTriangle, Video, Settings, LayoutDas
 import { Button } from "./ui/button";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth, AppRole } from "@/hooks/useAuth";
-import trackifyLogo from "@/assets/trackify_logo.jfif";
+import owlMascot from "@/assets/owl_mascot.png";
 import { motion } from "framer-motion";
 
 interface NavItem {
@@ -40,7 +40,7 @@ const Sidebar = () => {
       {/* Logo */}
       <div className="p-6 flex items-center gap-3 relative z-10">
         <div className="relative">
-          <img src={trackifyLogo} alt="Trackify Logo" className="w-10 h-10 rounded-xl object-cover ring-2 ring-primary/20" />
+          <img src={owlMascot} alt="Trackify Logo" className="w-10 h-10 rounded-xl object-contain" />
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-neon-cyan rounded-full border-2 border-sidebar animate-pulse" />
         </div>
         <span className="text-lg font-bold text-primary-foreground tracking-tight">Trackify</span>
