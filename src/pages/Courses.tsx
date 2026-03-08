@@ -278,6 +278,55 @@ const Courses = () => {
     }
   };
 
+  const deleteCourse = useMutation({
+    mutationFn: async (courseId: string) => {
+      await supabase.from("enrollments").delete().eq("course_id", courseId);
+      await supabase.from("attendance_records").delete().eq("course_id", courseId);
+      await supabase.from("behavior_records").delete().eq("course_id", courseId);
+      const { error } = await supabase.from("courses").delete().eq("id", courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      toast.success("Course deleted successfully");
+      setSelectedCourseId(null);
+      refetch();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const enrollStudent = useMutation({
+    mutationFn: async ({ studentId, courseId }: { studentId: string; courseId: string }) => {
+      const { error } = await supabase.from("enrollments").insert({ student_id: studentId, course_id: courseId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      toast.success("Student enrolled successfully");
+      setEnrollDialogOpen(false);
+      setStudentToEnroll("");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const unenrollStudent = useMutation({
+    mutationFn: async ({ studentId, courseId }: { studentId: string; courseId: string }) => {
+      const { error } = await supabase.from("enrollments").delete().eq("student_id", studentId).eq("course_id", courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["enrollments"] });
+      toast.success("Student unenrolled");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const getUnenrolledStudents = (courseId: string) => {
+    const enrolledIds = enrollments.filter((e) => e.course_id === courseId).map((e) => e.student_id);
+    return students.filter((s) => !enrolledIds.includes(s.id));
+  };
+
   const getStatusBadge = (status: string | null) => {
     if (!status) return <Badge variant="secondary" className="text-xs">Not Marked</Badge>;
     if (status === "present") return <Badge className="bg-emerald-500/10 text-emerald-500 text-xs">Present</Badge>;
