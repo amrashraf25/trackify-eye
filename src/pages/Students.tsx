@@ -317,13 +317,36 @@ const Students = () => {
                       <User className="w-8 h-8 text-primary" />
                     )}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-lg font-bold text-foreground">{selectedStudent.full_name}</h3>
                     <p className="text-xs text-muted-foreground font-mono">{selectedStudent.student_code}</p>
                     <Badge variant={selectedStudent.status === "active" ? "default" : "secondary"} className="mt-1 text-[10px]">
                       {selectedStudent.status}
                     </Badge>
                   </div>
+                  {canManage && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete <strong>{selectedStudent.full_name}</strong>? This will remove all their enrollments, attendance, and behavior records. This cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteStudent.mutate(selectedStudent.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
