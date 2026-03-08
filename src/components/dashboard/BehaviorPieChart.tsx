@@ -1,15 +1,22 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import { motion } from "framer-motion";
 
 const data = [
-  { name: "Excellent", value: 45, color: "#10b981" },
-  { name: "Good", value: 35, color: "#3b82f6" },
-  { name: "Poor", value: 20, color: "#ef4444" },
+  { name: "Excellent", value: 45, color: "hsl(160 84% 39%)" },
+  { name: "Good", value: 35, color: "hsl(217 91% 60%)" },
+  { name: "Poor", value: 20, color: "hsl(0 84% 60%)" },
 ];
 
 const BehaviorPieChart = () => {
   return (
-    <div className="bg-card rounded-xl p-5 border border-border">
-      <h3 className="text-lg font-semibold text-foreground mb-4">Student Behavior</h3>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="glass rounded-2xl p-5 hover:shadow-card-hover transition-all duration-300"
+    >
+      <h3 className="text-base font-bold text-foreground mb-1">Student Behavior</h3>
+      <p className="text-xs text-muted-foreground mb-4">Behavior score distribution</p>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -19,8 +26,9 @@ const BehaviorPieChart = () => {
               cy="50%"
               innerRadius={60}
               outerRadius={90}
-              paddingAngle={3}
+              paddingAngle={4}
               dataKey="value"
+              strokeWidth={0}
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
@@ -30,11 +38,11 @@ const BehaviorPieChart = () => {
               contentStyle={{ 
                 backgroundColor: 'hsl(var(--card))', 
                 border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                color: 'hsl(var(--foreground))'
+                borderRadius: '12px',
+                color: 'hsl(var(--foreground))',
+                boxShadow: '0 8px 30px hsl(0 0% 0% / 0.2)',
               }}
               itemStyle={{ color: 'hsl(var(--foreground))' }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
               formatter={(value: number) => [`${value}%`, 'Students']}
             />
             <Legend 
@@ -45,7 +53,7 @@ const BehaviorPieChart = () => {
           </PieChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

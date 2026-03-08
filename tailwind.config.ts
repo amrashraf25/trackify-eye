@@ -15,6 +15,7 @@ export default {
     extend: {
       fontFamily: {
         outfit: ['Outfit', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -67,6 +68,11 @@ export default {
           header: "hsl(var(--table-header))",
           hover: "hsl(var(--table-row-hover))",
         },
+        neon: {
+          blue: "hsl(var(--neon-blue))",
+          purple: "hsl(var(--neon-purple))",
+          cyan: "hsl(var(--neon-cyan))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -76,6 +82,10 @@ export default {
       boxShadow: {
         'glow-red': 'var(--glow-red)',
         'glow-subtle': 'var(--glow-subtle)',
+        'glow-primary': 'var(--glow-primary)',
+        'glow-purple': 'var(--glow-purple)',
+        'glow-cyan': 'var(--glow-cyan)',
+        'card-hover': '0 8px 30px hsl(var(--primary) / 0.12)',
       },
       keyframes: {
         "accordion-down": {
@@ -86,10 +96,20 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        "scan-line": {
+          "0%": { top: "0%" },
+          "100%": { top: "100%" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "shimmer": "shimmer 3s linear infinite",
+        "scan-line": "scan-line 3s linear infinite",
       },
     },
   },

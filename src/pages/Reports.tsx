@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileText, TrendingUp, Users, AlertTriangle, Calendar, Activity } from "lucide-react";
+import { Download, FileText, TrendingUp, Users, AlertTriangle, Activity } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { toast } from "sonner";
 import { subDays, subMonths, subYears, isAfter, format } from "date-fns";
+import { motion } from "framer-motion";
 
 const Reports = () => {
   const [dateRange, setDateRange] = useState("month");
@@ -62,15 +63,6 @@ const Reports = () => {
     },
   });
 
-  const { data: courses = [] } = useQuery({
-    queryKey: ["report-courses"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("courses").select("*");
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const filteredAttendance = useMemo(() => {
     const startDate = getDateRangeStart();
     return attendance.filter((r) => isAfter(new Date(r.date), startDate));
@@ -104,7 +96,6 @@ const Reports = () => {
     }));
   }, [students, behaviorScores]);
 
-  // Attendance per course
   const courseAttendance = useMemo(() => {
     const byCourseName: Record<string, { present: number; absent: number; late: number }> = {};
     filteredAttendance.forEach((r) => {
@@ -160,18 +151,20 @@ const Reports = () => {
   const tooltipStyle = {
     backgroundColor: "hsl(var(--card))",
     border: "1px solid hsl(var(--border))",
-    borderRadius: "8px",
+    borderRadius: "12px",
     color: "hsl(var(--foreground))",
+    boxShadow: "0 8px 30px hsl(0 0% 0% / 0.2)",
   };
 
   return (
     <MainLayout title="Reports & Analytics">
       <div className="space-y-6">
         {/* Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+          className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
             <Select value={reportType} onValueChange={setReportType}>
-              <SelectTrigger className="w-48 bg-card border-border"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-48 glass rounded-xl"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="attendance">Attendance Report</SelectItem>
                 <SelectItem value="incidents">Incidents Report</SelectItem>
@@ -179,7 +172,7 @@ const Reports = () => {
               </SelectContent>
             </Select>
             <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-40 bg-card border-border"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-40 glass rounded-xl"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="week">Last Week</SelectItem>
                 <SelectItem value="month">Last Month</SelectItem>
@@ -188,107 +181,106 @@ const Reports = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={exportToCSV} className="gap-2"><Download className="w-4 h-4" />CSV</Button>
-            <Button onClick={exportToPDF} className="gap-2"><FileText className="w-4 h-4" />PDF</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={exportToCSV} className="gap-2 rounded-xl"><Download className="w-4 h-4" />CSV</Button>
+            <Button onClick={exportToPDF} className="gap-2 rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"><FileText className="w-4 h-4" />PDF</Button>
           </div>
-        </div>
+        </motion.div>
 
-        <p className="text-sm text-muted-foreground">Showing: <span className="font-medium text-foreground">{getDateRangeLabel()}</span></p>
+        <p className="text-xs text-muted-foreground">Showing: <span className="font-medium text-foreground">{getDateRangeLabel()}</span></p>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-card border-border"><CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/20"><Users className="w-5 h-5 text-primary" /></div>
-              <div><p className="text-sm text-muted-foreground">Attendance Records</p><p className="text-2xl font-bold text-foreground">{filteredAttendance.length}</p></div>
-            </div>
-          </CardContent></Card>
-          <Card className="bg-card border-border"><CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/20"><TrendingUp className="w-5 h-5 text-emerald-500" /></div>
-              <div><p className="text-sm text-muted-foreground">Avg Attendance</p><p className="text-2xl font-bold text-foreground">{avgAttendance}</p></div>
-            </div>
-          </CardContent></Card>
-          <Card className="bg-card border-border"><CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/20"><AlertTriangle className="w-5 h-5 text-primary" /></div>
-              <div><p className="text-sm text-muted-foreground">Total Incidents</p><p className="text-2xl font-bold text-foreground">{filteredIncidents.length}</p></div>
-            </div>
-          </CardContent></Card>
-          <Card className="bg-card border-border"><CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/20"><Activity className="w-5 h-5 text-destructive" /></div>
-              <div><p className="text-sm text-muted-foreground">Low Behavior</p><p className="text-2xl font-bold text-destructive">{lowBehaviorStudents.length}</p></div>
-            </div>
-          </CardContent></Card>
+          {[
+            { icon: Users, color: "text-primary", bg: "bg-primary/15", label: "Attendance Records", value: filteredAttendance.length },
+            { icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-500/15", label: "Avg Attendance", value: avgAttendance },
+            { icon: AlertTriangle, color: "text-primary", bg: "bg-primary/15", label: "Total Incidents", value: filteredIncidents.length },
+            { icon: Activity, color: "text-destructive", bg: "bg-destructive/15", label: "Low Behavior", value: lowBehaviorStudents.length },
+          ].map((item, i) => (
+            <motion.div key={item.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
+              <Card className="glass rounded-2xl hover-lift transition-all">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${item.bg}`}><item.icon className={`w-5 h-5 ${item.color}`} /></div>
+                    <div><p className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</p><p className="text-2xl font-bold text-foreground">{item.value}</p></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-foreground">Attendance by Course</CardTitle></CardHeader>
-            <CardContent>
-              {courseAttendance.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={courseAttendance}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Bar dataKey="present" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} name="Present" />
-                    <Bar dataKey="absent" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Absent" />
-                    <Bar dataKey="late" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} name="Late" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">No attendance data</div>
-              )}
-            </CardContent>
-          </Card>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="glass rounded-2xl">
+              <CardHeader><CardTitle className="text-foreground text-base">Attendance by Course</CardTitle></CardHeader>
+              <CardContent>
+                {courseAttendance.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={courseAttendance}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} tickLine={false} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} />
+                      <Tooltip contentStyle={tooltipStyle} />
+                      <Bar dataKey="present" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} name="Present" />
+                      <Bar dataKey="absent" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Absent" />
+                      <Bar dataKey="late" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} name="Late" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">No attendance data</div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
-          <Card className="bg-card border-border">
-            <CardHeader><CardTitle className="text-foreground">Incidents by Type</CardTitle></CardHeader>
-            <CardContent>
-              {incidentsByType.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie data={incidentsByType} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                      {incidentsByType.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                    </Pie>
-                    <Tooltip contentStyle={tooltipStyle} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">No incidents</div>
-              )}
-            </CardContent>
-          </Card>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="glass rounded-2xl">
+              <CardHeader><CardTitle className="text-foreground text-base">Incidents by Type</CardTitle></CardHeader>
+              <CardContent>
+                {incidentsByType.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie data={incidentsByType} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} dataKey="value" strokeWidth={0} label={({ name, value }) => `${name}: ${value}`}>
+                        {incidentsByType.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                      </Pie>
+                      <Tooltip contentStyle={tooltipStyle} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">No incidents</div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
 
-        {/* Low Behavior Alert Table */}
+        {/* Low Behavior Alert */}
         {lowBehaviorStudents.length > 0 && (
-          <Card className="bg-card border border-destructive/20">
-            <CardHeader>
-              <CardTitle className="text-foreground flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-destructive" />
-                Students with Low Behavior Score (&lt;60%)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {lowBehaviorStudents.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-destructive/5">
-                    <div>
-                      <p className="font-medium text-foreground">{s.full_name}</p>
-                      <p className="text-xs text-muted-foreground">{s.student_code}</p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card className="glass rounded-2xl neon-border-purple">
+              <CardHeader>
+                <CardTitle className="text-foreground flex items-center gap-2 text-base">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                  Students with Low Behavior Score (&lt;60%)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {lowBehaviorStudents.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-destructive/5 hover:bg-destructive/10 transition-colors">
+                      <div>
+                        <p className="font-semibold text-foreground text-sm">{s.full_name}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">{s.student_code}</p>
+                      </div>
+                      <Badge className="bg-destructive/10 text-destructive">{s.score}%</Badge>
                     </div>
-                    <Badge className="bg-destructive/10 text-destructive">{s.score}%</Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
       </div>
     </MainLayout>

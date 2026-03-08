@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, Phone, Moon, MessageCircle, Coffee, Utensils } from "lucide-react";
+import { AlertTriangle, Phone, Moon, MessageCircle, Coffee, Utensils, Wifi } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Incident {
   id: string;
@@ -25,9 +26,9 @@ const getBehaviorIcon = (type: string) => {
 
 const getSeverityColor = (severity: string | null) => {
   switch (severity) {
-    case "high": return "bg-red-500/10 text-red-500";
+    case "high": return "bg-destructive/10 text-destructive";
     case "medium": return "bg-amber-500/10 text-amber-500";
-    case "low": return "bg-blue-500/10 text-blue-500";
+    case "low": return "bg-neon-blue/10 text-neon-blue";
     default: return "bg-muted text-muted-foreground";
   }
 };
@@ -37,7 +38,6 @@ const LiveIncidentFeed = () => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Fetch recent incidents
     const fetchRecent = async () => {
       const { data } = await supabase
         .from("incidents")
@@ -48,32 +48,28 @@ const LiveIncidentFeed = () => {
     };
     fetchRecent();
 
-    // Subscribe to real-time updates
     const channel = supabase
       .channel("live-incidents")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "incidents" },
-        (payload) => {
-          setIncidents((prev) => [payload.new as Incident, ...prev].slice(0, 20));
-        }
-      )
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "incidents" }, (payload) => {
+        setIncidents((prev) => [payload.new as Incident, ...prev].slice(0, 20));
+      })
       .subscribe((status) => {
         setIsConnected(status === "SUBSCRIBED");
       });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   return (
-    <div className="bg-card rounded-xl border border-border p-5">
+    <div className="glass rounded-2xl p-5">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="font-semibold text-foreground">Live Detection Feed</h4>
+        <h4 className="font-bold text-foreground text-sm">Live Detection Feed</h4>
         <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
-          <span className="text-xs text-muted-foreground">{isConnected ? "Connected" : "Connecting..."}</span>
+          <Wifi className={`w-3.5 h-3.5 ${isConnected ? "text-neon-cyan" : "text-muted-foreground"}`} />
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+            {isConnected ? "Connected" : "Connecting..."}
+          </span>
+          {isConnected && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
         </div>
       </div>
 
@@ -83,28 +79,33 @@ const LiveIncidentFeed = () => {
         </p>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto">
-          {incidents.map((incident) => (
-            <div
-              key={incident.id}
-              className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors"
-            >
-              <div className={`p-1.5 rounded-md ${getSeverityColor(incident.severity)}`}>
-                {getBehaviorIcon(incident.incident_type)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{incident.incident_type}</p>
-                <p className="text-xs text-muted-foreground">Room {incident.room_number}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <Badge variant="outline" className={getSeverityColor(incident.severity)}>
-                  {incident.severity}
-                </Badge>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formatDistanceToNow(new Date(incident.detected_at), { addSuffix: true })}
-                </p>
-              </div>
-            </div>
-          ))}
+          <AnimatePresence>
+            {incidents.map((incident) => (
+              <motion.div
+                key={incident.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-3 p-2.5 rounded-xl bg-secondary/20 hover:bg-secondary/40 transition-colors"
+              >
+                <div className={`p-1.5 rounded-lg ${getSeverityColor(incident.severity)}`}>
+                  {getBehaviorIcon(incident.incident_type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">{incident.incident_type}</p>
+                  <p className="text-[10px] text-muted-foreground">Room {incident.room_number}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <Badge variant="outline" className={`text-[10px] ${getSeverityColor(incident.severity)}`}>
+                    {incident.severity}
+                  </Badge>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {formatDistanceToNow(new Date(incident.detected_at), { addSuffix: true })}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { BookOpen, Users, Clock } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { motion } from "framer-motion";
 
 const courses = [
   { id: 1, name: "Agile Methodologies", students: 45, progress: 78, time: "Mon, Wed 10:00" },
@@ -10,25 +11,36 @@ const courses = [
 
 const RecentCourses = () => {
   return (
-    <div className="bg-card rounded-xl p-5 border border-border">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5 }}
+      className="glass rounded-2xl p-5 hover:shadow-card-hover transition-all duration-300"
+    >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">My Courses</h3>
-        <span className="text-xs text-primary cursor-pointer hover:underline">View All</span>
+        <div>
+          <h3 className="text-base font-bold text-foreground">My Courses</h3>
+          <p className="text-xs text-muted-foreground">Active course progress</p>
+        </div>
+        <span className="text-xs text-primary cursor-pointer hover:underline font-medium">View All</span>
       </div>
-      <div className="space-y-4">
-        {courses.map((course) => (
-          <div
+      <div className="space-y-3">
+        {courses.map((course, index) => (
+          <motion.div
             key={course.id}
-            className="p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 + index * 0.1 }}
+            className="p-4 rounded-xl bg-secondary/40 hover:bg-secondary/70 transition-all duration-200 cursor-pointer group hover-lift"
           >
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                   <BookOpen className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium text-foreground">{course.name}</p>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                  <p className="font-semibold text-foreground text-sm">{course.name}</p>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                     <span className="flex items-center gap-1">
                       <Users className="w-3 h-3" /> {course.students}
                     </span>
@@ -38,13 +50,13 @@ const RecentCourses = () => {
                   </div>
                 </div>
               </div>
-              <span className="text-sm font-medium text-primary">{course.progress}%</span>
+              <span className="text-sm font-bold text-primary">{course.progress}%</span>
             </div>
             <Progress value={course.progress} className="h-1.5" />
-          </div>
+          </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

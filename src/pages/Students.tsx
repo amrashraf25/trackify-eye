@@ -2,7 +2,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Plus, AlertTriangle, Clock } from "lucide-react";
+import { Search, User, BookOpen, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Users } from "lucide-react";
+import { motion } from "framer-motion";
 
 const Students = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,33 +104,33 @@ const Students = () => {
   return (
     <MainLayout title="Students">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-card rounded-xl border border-border p-5">
+        <div className="lg:col-span-2 glass rounded-2xl p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search students..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+              <Input placeholder="Search students..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl bg-secondary/50 border-border/50" />
             </div>
             {canManage && (
               <Dialog open={addOpen} onOpenChange={setAddOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="w-4 h-4 mr-2" />Add Student</Button>
+                  <Button size="sm" className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"><Plus className="w-4 h-4 mr-2" />Add Student</Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="glass">
                   <DialogHeader><DialogTitle>Add New Student</DialogTitle></DialogHeader>
                   <div className="space-y-3">
-                    <div><Label>Full Name *</Label><Input value={newStudent.full_name} onChange={(e) => setNewStudent({ ...newStudent, full_name: e.target.value })} /></div>
-                    <div><Label>Student Code *</Label><Input value={newStudent.student_code} onChange={(e) => setNewStudent({ ...newStudent, student_code: e.target.value })} placeholder="e.g. STU001" /></div>
-                    <div><Label>Email</Label><Input type="email" value={newStudent.email} onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })} /></div>
-                    <div><Label>Phone</Label><Input value={newStudent.phone} onChange={(e) => setNewStudent({ ...newStudent, phone: e.target.value })} /></div>
+                    <div><Label>Full Name *</Label><Input value={newStudent.full_name} onChange={(e) => setNewStudent({ ...newStudent, full_name: e.target.value })} className="rounded-xl" /></div>
+                    <div><Label>Student Code *</Label><Input value={newStudent.student_code} onChange={(e) => setNewStudent({ ...newStudent, student_code: e.target.value })} placeholder="e.g. STU001" className="rounded-xl" /></div>
+                    <div><Label>Email</Label><Input type="email" value={newStudent.email} onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })} className="rounded-xl" /></div>
+                    <div><Label>Phone</Label><Input value={newStudent.phone} onChange={(e) => setNewStudent({ ...newStudent, phone: e.target.value })} className="rounded-xl" /></div>
                     <div><Label>Year Level</Label>
                       <Select value={newStudent.year_level} onValueChange={(v) => setNewStudent({ ...newStudent, year_level: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {[1, 2, 3, 4, 5].map((y) => <SelectItem key={y} value={String(y)}>Year {y}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button onClick={handleAddStudent} className="w-full">Add Student</Button>
+                    <Button onClick={handleAddStudent} className="w-full rounded-xl bg-gradient-to-r from-primary to-accent">Add Student</Button>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -142,44 +143,47 @@ const Students = () => {
               <p>No students found.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredStudents.map((student) => {
+            <div className="space-y-2">
+              {filteredStudents.map((student, index) => {
                 const studentCourses = getStudentCourses(student.id);
                 const score = getScore(student.id);
                 return (
-                  <div
+                  <motion.div
                     key={student.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
                     onClick={() => setSelectedStudentId(student.id)}
-                    className={`p-4 rounded-lg cursor-pointer transition-all ${
+                    className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                       selectedStudent?.id === student.id
-                        ? "bg-primary/10 border border-primary/30"
-                        : "bg-secondary/50 hover:bg-secondary border border-transparent"
+                        ? "bg-primary/10 ring-1 ring-primary/30"
+                        : "bg-secondary/30 hover:bg-secondary/50"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                        <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
                           {student.avatar_url ? (
-                            <img src={student.avatar_url} alt={student.full_name} className="w-full h-full rounded-full object-cover" />
+                            <img src={student.avatar_url} alt={student.full_name} className="w-full h-full rounded-xl object-cover" />
                           ) : (
                             <User className="w-5 h-5 text-primary" />
                           )}
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{student.full_name}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="font-semibold text-foreground text-sm">{student.full_name}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">
                             {student.student_code} • Year {student.year_level} • {studentCourses.length} courses
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`text-sm font-bold ${getScoreColor(score)}`}>{score}%</span>
-                        <Badge variant={student.status === "active" ? "default" : "secondary"} className={student.status === "active" ? "bg-emerald-500/10 text-emerald-500" : ""}>
+                        <Badge variant={student.status === "active" ? "default" : "secondary"} className={`text-[10px] ${student.status === "active" ? "bg-emerald-500/10 text-emerald-500" : ""}`}>
                           {student.status}
                         </Badge>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -190,63 +194,62 @@ const Students = () => {
         <div className="space-y-4">
           {selectedStudent ? (
             <>
-              <div className="bg-card rounded-xl border border-border p-5">
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass rounded-2xl p-5">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden ring-2 ring-primary/20">
                     {selectedStudent.avatar_url ? (
-                      <img src={selectedStudent.avatar_url} alt={selectedStudent.full_name} className="w-full h-full rounded-full object-cover" />
+                      <img src={selectedStudent.avatar_url} alt={selectedStudent.full_name} className="w-full h-full rounded-2xl object-cover" />
                     ) : (
                       <User className="w-8 h-8 text-primary" />
                     )}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-foreground">{selectedStudent.full_name}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedStudent.student_code}</p>
-                    <Badge variant={selectedStudent.status === "active" ? "default" : "secondary"} className="mt-1">
+                    <h3 className="text-lg font-bold text-foreground">{selectedStudent.full_name}</h3>
+                    <p className="text-xs text-muted-foreground font-mono">{selectedStudent.student_code}</p>
+                    <Badge variant={selectedStudent.status === "active" ? "default" : "secondary"} className="mt-1 text-[10px]">
                       {selectedStudent.status}
                     </Badge>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-secondary/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Year Level</p>
-                    <p className="text-xl font-semibold text-foreground">{selectedStudent.year_level}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-secondary/30 rounded-xl p-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Year Level</p>
+                    <p className="text-xl font-bold text-foreground">{selectedStudent.year_level}</p>
                   </div>
-                  <div className="bg-secondary/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Behavior</p>
-                    <p className={`text-xl font-semibold ${getScoreColor(getScore(selectedStudent.id))}`}>{getScore(selectedStudent.id)}%</p>
+                  <div className="bg-secondary/30 rounded-xl p-3">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Behavior</p>
+                    <p className={`text-xl font-bold ${getScoreColor(getScore(selectedStudent.id))}`}>{getScore(selectedStudent.id)}%</p>
                   </div>
                 </div>
 
                 {selectedStudent.email && (
                   <div className="mt-4 text-sm">
                     <span className="text-muted-foreground">Email: </span>
-                    <span className="text-foreground">{selectedStudent.email}</span>
+                    <span className="text-foreground font-mono text-xs">{selectedStudent.email}</span>
                   </div>
                 )}
                 {selectedStudent.phone && (
                   <div className="mt-1 text-sm">
                     <span className="text-muted-foreground">Phone: </span>
-                    <span className="text-foreground">{selectedStudent.phone}</span>
+                    <span className="text-foreground font-mono text-xs">{selectedStudent.phone}</span>
                   </div>
                 )}
-              </div>
+              </motion.div>
 
-              {/* Enrolled Courses */}
-              <div className="bg-card rounded-xl border border-border p-5">
-                <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass rounded-2xl p-5">
+                <h4 className="font-bold text-foreground mb-4 flex items-center gap-2 text-sm">
                   <BookOpen className="w-4 h-4 text-primary" />
                   Enrolled Courses ({getStudentCourses(selectedStudent.id).length})
                 </h4>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {getStudentCourses(selectedStudent.id).length > 0 ? (
                     getStudentCourses(selectedStudent.id).map((course) => (
-                      <div key={course.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                      <div key={course.id} className="flex items-center gap-3 p-3 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors">
                         <BookOpen className="w-5 h-5 text-primary shrink-0" />
                         <div>
-                          <p className="font-medium text-foreground">{course.name}</p>
-                          <p className="text-xs text-muted-foreground">{course.course_code} • {course.credits} credits</p>
+                          <p className="font-medium text-foreground text-sm">{course.name}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">{course.course_code} • {course.credits} credits</p>
                         </div>
                       </div>
                     ))
@@ -254,10 +257,10 @@ const Students = () => {
                     <p className="text-sm text-muted-foreground">Not enrolled in any courses</p>
                   )}
                 </div>
-              </div>
+              </motion.div>
             </>
           ) : (
-            <div className="bg-card rounded-xl border border-border p-5 text-center text-muted-foreground">
+            <div className="glass rounded-2xl p-5 text-center text-muted-foreground">
               Select a student to view details
             </div>
           )}
