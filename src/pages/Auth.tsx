@@ -93,7 +93,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [transitionPhase, setTransitionPhase] = useState<
-    "idle" | "lensClose" | "flyToCenter" | "spreadWings" | "reveal"
+    "idle" | "flying" | "reveal"
   >("idle");
   // Use ref to prevent auth listener from navigating during animation
   const isTransitioning = useRef(false);
