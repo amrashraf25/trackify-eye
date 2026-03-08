@@ -186,7 +186,7 @@ const Auth = () => {
       isTransitioning.current = false;
       // Flash eyes red
       setErrorFlash(true);
-      setTimeout(() => setErrorFlash(false), 1500);
+      setTimeout(() => setErrorFlash(false), 3000);
     } else {
       // Start cinematic transition while keeping auth background visible
       setTransitionPhase("hold");
