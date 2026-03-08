@@ -514,7 +514,9 @@ const Students = () => {
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-bold text-foreground flex items-center gap-2 text-xs">
                       <Calendar className="w-3.5 h-3.5 text-primary" />
-                      Weekly Behavior Score
+                      {selectedBehaviorCourse !== "all"
+                        ? `Behavior — ${getStudentCourses(selectedStudent.id).find(c => c.id === selectedBehaviorCourse)?.name || "Course"}`
+                        : "Weekly Behavior Score"}
                     </h4>
                     {canManage && (
                       <AlertDialog>
@@ -527,7 +529,7 @@ const Students = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Reset Behavior Score</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will delete all behavior records for <strong>{selectedStudent.full_name}</strong> and reset their score to 100%. This cannot be undone.
+                              This will delete {selectedBehaviorCourse !== "all" ? "course-specific" : "all"} behavior records for <strong>{selectedStudent.full_name}</strong> and reset the score. This cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -535,11 +537,16 @@ const Students = () => {
                             <AlertDialogAction
                               onClick={async () => {
                                 try {
-                                  await supabase.from("behavior_records").delete().eq("student_id", selectedStudent.id);
-                                  await supabase.from("behavior_scores").update({ score: 100 }).eq("student_id", selectedStudent.id);
+                                  if (selectedBehaviorCourse !== "all") {
+                                    await supabase.from("behavior_records").delete().eq("student_id", selectedStudent.id).eq("course_id", selectedBehaviorCourse);
+                                  } else {
+                                    await supabase.from("behavior_records").delete().eq("student_id", selectedStudent.id);
+                                    await supabase.from("behavior_scores").update({ score: 100 }).eq("student_id", selectedStudent.id);
+                                  }
                                   queryClient.invalidateQueries({ queryKey: ["behavior-scores"] });
                                   queryClient.invalidateQueries({ queryKey: ["behavior-records"] });
-                                  toast.success("Behavior score reset to 100%");
+                                  queryClient.invalidateQueries({ queryKey: ["student-behavior-records"] });
+                                  toast.success("Behavior score reset");
                                 } catch (err: any) {
                                   toast.error(err.message);
                                 }
@@ -552,6 +559,35 @@ const Students = () => {
                         </AlertDialogContent>
                       </AlertDialog>
                     )}
+                  </div>
+
+                  {/* Course filter */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <BookOpen className="w-3 h-3 text-primary" />
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Filter by Course</span>
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => setSelectedBehaviorCourse("all")}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                          selectedBehaviorCourse === "all"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                        }`}
+                      >All</button>
+                      {getStudentCourses(selectedStudent.id).map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => setSelectedBehaviorCourse(c.id)}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                            selectedBehaviorCourse === c.id
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                          }`}
+                        >{c.course_code}</button>
+                      ))}
+                    </div>
                   </div>
                   <div className="grid grid-cols-8 gap-1.5 mb-3">
                     {WEEKS.map((w) => {
