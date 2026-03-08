@@ -2,8 +2,9 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, BookOpen, Users, Plus, GraduationCap, CheckCircle, XCircle, Clock, User, TrendingDown, TrendingUp, History, ChevronLeft } from "lucide-react";
+import { Search, BookOpen, Users, Plus, GraduationCap, CheckCircle, XCircle, Clock, User, TrendingDown, TrendingUp, History, ChevronLeft, Sparkles, Calendar, Award } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -513,72 +514,171 @@ const Courses = () => {
     );
   }
 
+  const cardGradients = [
+    "from-primary/20 via-primary/5 to-transparent",
+    "from-accent/20 via-accent/5 to-transparent",
+    "from-neon-cyan/20 via-neon-cyan/5 to-transparent",
+    "from-emerald-500/20 via-emerald-500/5 to-transparent",
+    "from-amber-500/20 via-amber-500/5 to-transparent",
+    "from-rose-500/20 via-rose-500/5 to-transparent",
+  ];
+
+  const iconBgs = [
+    "from-primary to-primary/60",
+    "from-accent to-accent/60",
+    "from-neon-cyan to-neon-cyan/60",
+    "from-emerald-500 to-emerald-600",
+    "from-amber-500 to-amber-600",
+    "from-rose-500 to-rose-600",
+  ];
+
   // Course list view
   return (
     <MainLayout title="Courses">
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search courses..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
-          </div>
-          {canManage && (
-            <Dialog open={addOpen} onOpenChange={setAddOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm"><Plus className="w-4 h-4 mr-2" />Add Course</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Add New Course</DialogTitle></DialogHeader>
-                <div className="space-y-3">
-                  <div><Label>Course Code *</Label><Input value={newCourse.course_code} onChange={(e) => setNewCourse({ ...newCourse, course_code: e.target.value })} placeholder="e.g. CS101" /></div>
-                  <div><Label>Name *</Label><Input value={newCourse.name} onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })} /></div>
-                  <div><Label>Description</Label><Input value={newCourse.description} onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })} /></div>
-                  <div><Label>Credits</Label>
-                    <Select value={newCourse.credits} onValueChange={(v) => setNewCourse({ ...newCourse, credits: v })}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {[1, 2, 3, 4, 5].map((c) => <SelectItem key={c} value={String(c)}>{c} Credits</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+      <div className="space-y-8">
+        {/* Hero header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-neon-cyan/10 border border-border/50 p-8"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent/10 rounded-full blur-[60px] translate-y-1/2 -translate-x-1/4" />
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="text-xs font-semibold uppercase tracking-widest text-primary">Course Management</span>
+              </div>
+              <h1 className="text-2xl font-bold text-foreground mb-1">Your Courses</h1>
+              <p className="text-sm text-muted-foreground">
+                {courses.length} course{courses.length !== 1 ? "s" : ""} • {enrollments.length} total enrollment{enrollments.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+            {canManage && (
+              <Dialog open={addOpen} onOpenChange={setAddOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg shadow-primary/25">
+                    <Plus className="w-4 h-4 mr-2" />Add Course
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Add New Course</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <div><Label>Course Code *</Label><Input value={newCourse.course_code} onChange={(e) => setNewCourse({ ...newCourse, course_code: e.target.value })} placeholder="e.g. CS101" /></div>
+                    <div><Label>Name *</Label><Input value={newCourse.name} onChange={(e) => setNewCourse({ ...newCourse, name: e.target.value })} /></div>
+                    <div><Label>Description</Label><Input value={newCourse.description} onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })} /></div>
+                    <div><Label>Credits</Label>
+                      <Select value={newCourse.credits} onValueChange={(v) => setNewCourse({ ...newCourse, credits: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map((c) => <SelectItem key={c} value={String(c)}>{c} Credits</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label>Semester</Label><Input value={newCourse.semester} onChange={(e) => setNewCourse({ ...newCourse, semester: e.target.value })} /></div>
+                    <Button onClick={handleAddCourse} className="w-full">Add Course</Button>
                   </div>
-                  <div><Label>Semester</Label><Input value={newCourse.semester} onChange={(e) => setNewCourse({ ...newCourse, semester: e.target.value })} /></div>
-                  <Button onClick={handleAddCourse} className="w-full">Add Course</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Search */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="relative"
+        >
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search courses by name or code..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-11 h-12 rounded-xl bg-card border-border/50 text-base"
+          />
+        </motion.div>
 
         {filteredCourses.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No courses found. {canManage && "Add your first course to get started."}</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-20"
+          >
+            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <GraduationCap className="w-10 h-10 text-primary/50" />
+            </div>
+            <p className="text-lg font-medium text-muted-foreground">No courses found</p>
+            <p className="text-sm text-muted-foreground/70 mt-1">{canManage && "Add your first course to get started."}</p>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredCourses.map((course) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredCourses.map((course, index) => {
               const enrolled = getEnrolledStudents(course.id).length;
+              const gradientIdx = index % cardGradients.length;
               return (
-                <div
+                <motion.div
                   key={course.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.4 }}
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
                   onClick={() => setSelectedCourseId(course.id)}
-                  className="p-5 rounded-xl cursor-pointer transition-all bg-card border border-border hover:border-primary/30 hover:shadow-md"
+                  className="group relative p-6 rounded-2xl cursor-pointer transition-all bg-card border border-border/50 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 overflow-hidden"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <BookOpen className="w-5 h-5 text-primary" />
+                  {/* Gradient overlay */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${cardGradients[gradientIdx]} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                  
+                  {/* Decorative corner glow */}
+                  <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/15 transition-all duration-500" />
+
+                  <div className="relative z-10">
+                    {/* Icon & status */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${iconBgs[gradientIdx]} flex items-center justify-center shadow-lg`}>
+                        <BookOpen className="w-5 h-5 text-primary-foreground" />
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className={`text-[10px] uppercase tracking-wider font-bold ${
+                          course.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {course.status}
+                      </Badge>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground truncate">{course.name}</p>
-                      <p className="text-xs text-muted-foreground">{course.course_code}</p>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
-                        <span className="flex items-center gap-1"><Users className="w-3 h-3" />{enrolled} students</span>
-                        <span>{course.credits} credits</span>
+
+                    {/* Course info */}
+                    <h3 className="font-bold text-foreground text-lg mb-1 group-hover:text-primary transition-colors truncate">
+                      {course.name}
+                    </h3>
+                    <p className="text-xs font-mono text-muted-foreground mb-4">{course.course_code}</p>
+
+                    {course.description && (
+                      <p className="text-xs text-muted-foreground/80 line-clamp-2 mb-4">{course.description}</p>
+                    )}
+
+                    {/* Stats row */}
+                    <div className="flex items-center gap-4 pt-4 border-t border-border/50">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Users className="w-3.5 h-3.5" />
+                        <span className="font-semibold text-foreground">{enrolled}</span> students
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Award className="w-3.5 h-3.5" />
+                        <span className="font-semibold text-foreground">{course.credits}</span> credits
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground ml-auto">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {course.semester}
                       </div>
                     </div>
                   </div>
-                  <Badge className="mt-3" variant="secondary">{course.status}</Badge>
-                </div>
+                </motion.div>
               );
             })}
           </div>
