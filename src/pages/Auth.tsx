@@ -9,7 +9,6 @@ import { Mail, Lock, Shield, User, Stethoscope, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import owlMascot from "@/assets/owl_mascot.png";
-import owlFlying from "@/assets/owl_flying.png";
 import { motion, AnimatePresence } from "framer-motion";
 
 const demoAccounts = [
@@ -93,7 +92,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [transitionPhase, setTransitionPhase] = useState<
-    "idle" | "flying" | "reveal"
+    "idle" | "hold" | "flying" | "reveal"
   >("idle");
   // Use ref to prevent auth listener from navigating during animation
   const isTransitioning = useRef(false);
@@ -112,12 +111,18 @@ const Auth = () => {
 
   // Animation phase sequencer
   useEffect(() => {
-    if (transitionPhase === "flying") {
-      const t = setTimeout(() => setTransitionPhase("reveal"), 1800);
+    if (transitionPhase === "hold") {
+      const t = setTimeout(() => setTransitionPhase("flying"), 220);
       return () => clearTimeout(t);
     }
+
+    if (transitionPhase === "flying") {
+      const t = setTimeout(() => setTransitionPhase("reveal"), 1300);
+      return () => clearTimeout(t);
+    }
+
     if (transitionPhase === "reveal") {
-      const t = setTimeout(() => navigate("/"), 400);
+      const t = setTimeout(() => navigate("/"), 180);
       return () => clearTimeout(t);
     }
   }, [transitionPhase, navigate]);
@@ -136,8 +141,8 @@ const Auth = () => {
       setLoading(false);
       isTransitioning.current = false;
     } else {
-      // Start cinematic transition
-      setTransitionPhase("flying");
+      // Start cinematic transition while keeping auth background visible
+      setTransitionPhase("hold");
     }
   };
 
@@ -158,44 +163,45 @@ const Auth = () => {
       {/* ===== TRANSITION OVERLAY ===== */}
       <AnimatePresence>
         {isAnimating && (
-          <motion.div 
-            className="fixed inset-0 z-50 pointer-events-none overflow-hidden bg-background"
+          <motion.div
+            className="fixed inset-0 z-50 pointer-events-none overflow-hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           >
-            {/* Flying owl - starts visible and scales up toward viewer */}
             <motion.div
               className="absolute left-1/2 top-1/2 flex items-center justify-center"
               style={{ x: "-50%", y: "-50%" }}
-              initial={{ scale: 0.3, opacity: 1 }}
+              initial={{ scale: 1, y: -190, opacity: 1 }}
               animate={
                 transitionPhase === "flying"
-                  ? { scale: [0.3, 1, 8], opacity: [1, 1, 0] }
-                  : { scale: 12, opacity: 0 }
+                  ? { scale: [1, 1.2, 8], y: [-190, 0, 0], opacity: [1, 1, 0] }
+                  : transitionPhase === "reveal"
+                    ? { scale: 8, y: 0, opacity: 0 }
+                    : { scale: 1, y: -190, opacity: 1 }
               }
               transition={{
-                duration: 1.8,
-                ease: [0.25, 0.1, 0.25, 1],
-                times: [0, 0.4, 1],
+                duration: 1.3,
+                ease: [0.16, 1, 0.3, 1],
+                times: [0, 0.35, 1],
               }}
             >
-              {/* Glow aura */}
               <motion.div
                 className="absolute w-96 h-96 rounded-full"
                 style={{
-                  background: "radial-gradient(circle, hsl(200 100% 60% / 0.4) 0%, hsl(200 100% 50% / 0.1) 50%, transparent 70%)",
-                  filter: "blur(40px)",
+                  background:
+                    "radial-gradient(circle, hsl(200 100% 60% / 0.35) 0%, hsl(200 100% 50% / 0.08) 50%, transparent 72%)",
+                  filter: "blur(36px)",
                 }}
-                animate={{ scale: [0.8, 1.5, 3], opacity: [0.6, 0.4, 0] }}
-                transition={{ duration: 1.8 }}
+                animate={{ scale: [1, 1.4, 2.8], opacity: [0.5, 0.35, 0] }}
+                transition={{ duration: 1.3 }}
               />
-              {/* Flying owl image */}
               <motion.img
-                src={owlFlying}
+                src={owlMascot}
                 alt="Trackify Owl Flying"
-                className="w-80 h-80 object-contain relative z-10"
-                style={{ filter: "drop-shadow(0 0 60px hsl(200 100% 60% / 0.5))" }}
+                className="w-44 h-44 object-contain relative z-10"
+                style={{ filter: "drop-shadow(0 0 50px hsl(200 100% 60% / 0.45))" }}
               />
             </motion.div>
           </motion.div>
@@ -207,7 +213,7 @@ const Auth = () => {
         className="w-full max-w-md space-y-4 relative z-10"
         animate={
           isAnimating
-            ? { opacity: 0, scale: 0.9, y: 30, filter: "blur(8px)" }
+            ? { opacity: 1, scale: 1, y: 0, filter: "blur(2px)" }
             : { opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }
         }
         transition={{ duration: 0.5, ease: "easeOut" }}
