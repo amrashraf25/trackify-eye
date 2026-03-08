@@ -225,12 +225,33 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId, doctorCourses }: 
 
       {/* Week filter */}
       <div className="flex gap-1.5 flex-wrap mb-4">
-        <Button size="sm" variant={selectedWeek === "all" ? "default" : "outline"} className="rounded-lg text-xs h-7 px-2" onClick={() => setSelectedWeek("all")}>All</Button>
-        {weeks.map((w) => (
-          <Button key={w} size="sm" variant={selectedWeek === String(w) ? "default" : "outline"} className="rounded-lg text-xs h-7 px-2" onClick={() => setSelectedWeek(String(w))}>
-            W{w}
-          </Button>
-        ))}
+        {weeks.map((w) => {
+          const weekRecords = selectedCourseId !== "all"
+            ? records.filter((r: any) => r.week_number === w && r.course_id === selectedCourseId)
+            : records.filter((r: any) => r.week_number === w);
+          const weekScore = weekRecords.length > 0
+            ? Math.max(0, Math.min(100, 100 + weekRecords.reduce((sum: number, r: any) => sum + r.score_change, 0)))
+            : null;
+          const isActive = selectedWeek === String(w);
+          const bgClass = isActive
+            ? "ring-2 ring-primary bg-primary/20 text-primary"
+            : weekScore !== null
+              ? weekScore >= 80
+                ? "bg-emerald-500/20 text-emerald-500"
+                : weekScore >= 60
+                  ? "bg-amber-500/20 text-amber-500"
+                  : "bg-destructive/20 text-destructive"
+              : "bg-secondary/40 text-muted-foreground";
+          return (
+            <button
+              key={w}
+              onClick={() => setSelectedWeek(isActive ? "all" : String(w))}
+              className={`w-8 h-8 rounded-lg text-[10px] font-bold transition-all ${bgClass}`}
+            >
+              W{w}
+            </button>
+          );
+        })}
       </div>
 
       {/* Score display */}
