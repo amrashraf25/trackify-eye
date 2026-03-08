@@ -329,14 +329,8 @@ const Auth = () => {
                   transition={{ duration: 2.5, ease: "easeInOut" }}
                 />
               )}
-              {/* Left eye: Camera aperture that closes on sign-in */}
-              <ApertureOverlay
-                size="18%"
-                top="31%"
-                left="24%"
-                closing={transitionPhase === "flying"}
-                angry={errorFlash}
-              />
+              {/* Left eye glow */}
+              <EyeGlow size="18%" top="31%" left="24%" angry={errorFlash} />
               {/* Right eye: Glowing eye */}
               <EyeGlow size="14%" top="32%" left="55%" angry={errorFlash} />
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
