@@ -59,7 +59,7 @@ const Sidebar = () => {
               >
                 <Button
                   variant={isActive ? "default" : "ghost"}
-                  className={`w-full justify-start px-4 py-3 h-auto text-sm font-medium transition-all duration-200 relative group ${
+                  className={`w-full justify-start items-center px-4 py-2.5 h-10 text-sm font-medium transition-all duration-200 relative group ${
                     isActive
                       ? "bg-primary text-primary-foreground shadow-glow-primary"
                       : "text-sidebar-foreground hover:text-primary-foreground hover:bg-sidebar-hover"
@@ -72,7 +72,7 @@ const Sidebar = () => {
                       transition={{ type: "spring", stiffness: 300, damping: 30 }}
                     />
                   )}
-                  <item.icon className={`w-5 h-5 mr-3 transition-transform group-hover:scale-110 ${isActive ? "" : ""}`} />
+                  <item.icon className="w-4 h-4 mr-3 shrink-0 transition-transform group-hover:scale-110" />
                   {item.label}
                 </Button>
               </motion.div>
