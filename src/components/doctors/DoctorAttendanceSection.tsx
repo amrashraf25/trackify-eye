@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { ClipboardCheck, ChevronLeft, ChevronRight, UserCheck, UserX, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import SendDoctorAttendanceAlert from "./SendDoctorAttendanceAlert";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
 const WEEKS = Array.from({ length: 16 }, (_, i) => i + 1);
 
