@@ -186,7 +186,7 @@ const Auth = () => {
       isTransitioning.current = false;
       // Flash eyes red
       setErrorFlash(true);
-      setTimeout(() => setErrorFlash(false), 1500);
+      setTimeout(() => setErrorFlash(false), 3000);
     } else {
       // Start cinematic transition while keeping auth background visible
       setTransitionPhase("hold");
@@ -301,8 +301,16 @@ const Auth = () => {
           className="text-center mb-2"
         >
           <motion.div
-            animate={{ y: [0, -12, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            animate={
+              errorFlash
+                ? { y: [0, -12, 0], x: [0, -8, 8, -6, 6, -3, 3, 0] }
+                : { y: [0, -12, 0] }
+            }
+            transition={
+              errorFlash
+                ? { y: { duration: 3, repeat: Infinity, ease: "easeInOut" }, x: { duration: 0.5, ease: "easeInOut" } }
+                : { duration: 3, repeat: Infinity, ease: "easeInOut" }
+            }
             className="flex justify-center mb-3"
           >
             <div className="relative">
@@ -311,6 +319,16 @@ const Auth = () => {
                 alt="Trackify Owl"
                 className="w-40 h-40 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)]"
               />
+              {/* Red glow behind owl on error */}
+              {errorFlash && (
+                <motion.div
+                  className="absolute inset-0 -z-10 rounded-full"
+                  style={{ background: "radial-gradient(circle, hsl(0 100% 50% / 0.35) 0%, transparent 70%)", filter: "blur(20px)", scale: 1.3 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 1, 0.7, 1, 0.7] }}
+                  transition={{ duration: 2.5, ease: "easeInOut" }}
+                />
+              )}
               {/* Left eye: Camera aperture that closes on sign-in */}
               <ApertureOverlay
                 size="21%"
