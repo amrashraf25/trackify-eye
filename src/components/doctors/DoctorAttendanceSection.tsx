@@ -78,6 +78,7 @@ const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }
           <span className="text-xs font-normal text-muted-foreground ml-1">({attendanceRate}% overall)</span>
         </h3>
         <div className="flex items-center gap-2">
+          <SendDoctorAttendanceAlert doctorId={doctorId} doctorName={doctorName} attendanceRate={attendanceRate} />
           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" disabled={selectedWeek <= 1}
             onClick={() => setSelectedWeek((w) => w - 1)}>
             <ChevronLeft className="w-4 h-4" />
