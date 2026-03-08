@@ -294,10 +294,10 @@ const AdminDashboard = () => {
 
         {/* Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard title="Active Courses" value={coursesCount} icon={BookOpen} color="primary" index={0} />
-          <MetricCard title="Active Alerts" value={incidentsCount} icon={AlertTriangle} color="warning" index={1} />
-          <MetricCard title="Total Students" value={studentsCount} icon={Users} color="info" index={2} />
-          <MetricCard title="Attendance Records" value={attendanceCount} icon={TrendingUp} color="success" index={3} />
+          <MetricCard title="Active Courses" value={coursesCount} icon={BookOpen} color="primary" index={0} linkTo="/courses" />
+          <MetricCard title="Active Alerts" value={incidentsCount} icon={AlertTriangle} color="warning" index={1} linkTo="/alerts" />
+          <MetricCard title="Total Students" value={studentsCount} icon={Users} color="info" index={2} linkTo="/students" />
+          <MetricCard title="Attendance Records" value={attendanceCount} icon={TrendingUp} color="success" index={3} linkTo="/attendance" />
         </div>
 
         {/* Charts */}
