@@ -149,7 +149,7 @@ const Header = ({ title }: HeaderProps) => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-12 w-80 sm:w-96 glass rounded-2xl border border-border/50 shadow-xl overflow-hidden"
+                className="absolute right-0 top-12 w-80 sm:w-96 rounded-2xl border border-border/50 shadow-xl overflow-hidden bg-card"
               >
                 <div className="flex items-center justify-between p-4 border-b border-border/30">
                   <h3 className="font-bold text-foreground text-sm">Notifications</h3>
