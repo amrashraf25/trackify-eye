@@ -66,11 +66,7 @@ const Sidebar = () => {
                   }`}
                 >
                   {isActive && (
-                    <motion.div
-                      layoutId="sidebar-active"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-neon-cyan rounded-r-full"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
+                    <div className="absolute left-0 top-2 bottom-2 w-1 bg-neon-cyan rounded-r-full" />
                   )}
                   <item.icon className="w-4 h-4 mr-3 shrink-0 transition-transform group-hover:scale-110" />
                   {item.label}
