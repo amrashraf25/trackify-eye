@@ -208,6 +208,7 @@ const Courses = () => {
         action_name: action.name,
         score_change: action.change,
         notes: behaviorNotes || null,
+        week_number: selectedBehaviorWeek,
       });
       if (error) throw error;
     },
