@@ -189,6 +189,9 @@ const Students = () => {
 
   const canManage = role === "admin" || role === "dean";
 
+  const [assignCourseOpen, setAssignCourseOpen] = useState(false);
+  const [courseToAssign, setCourseToAssign] = useState("");
+
   const deleteStudent = useMutation({
     mutationFn: async (studentId: string) => {
       await supabase.from("enrollments").delete().eq("student_id", studentId);
@@ -206,6 +209,37 @@ const Students = () => {
     },
     onError: (err: any) => toast.error(err.message),
   });
+
+  const unenrollFromCourse = useMutation({
+    mutationFn: async ({ studentId, courseId }: { studentId: string; courseId: string }) => {
+      const { error } = await supabase.from("enrollments").delete().eq("student_id", studentId).eq("course_id", courseId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["student-enrollments"] });
+      toast.success("Course removed from student");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const assignCourse = useMutation({
+    mutationFn: async ({ studentId, courseId }: { studentId: string; courseId: string }) => {
+      const { error } = await supabase.from("enrollments").insert({ student_id: studentId, course_id: courseId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["student-enrollments"] });
+      toast.success("Course assigned to student");
+      setAssignCourseOpen(false);
+      setCourseToAssign("");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const getUnenrolledCourses = (studentId: string) => {
+    const enrolledCourseIds = enrollments.filter((e) => e.student_id === studentId).map((e) => e.course_id);
+    return courses.filter((c) => !enrolledCourseIds.includes(c.id));
+  };
 
   return (
     <MainLayout title="Students">
