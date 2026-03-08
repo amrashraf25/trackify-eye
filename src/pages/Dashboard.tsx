@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import DoctorDashboard from "@/components/dashboard/DoctorDashboard";
 import DeanDashboard from "@/components/dashboard/DeanDashboard";
 import { useAuth } from "@/hooks/useAuth";
-import { useAuth } from "@/hooks/useAuth";
 import MetricCard from "@/components/dashboard/MetricCard";
 import AttendanceChart from "@/components/dashboard/AttendanceChart";
 import BehaviorPieChart from "@/components/dashboard/BehaviorPieChart";
