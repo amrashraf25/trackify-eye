@@ -97,24 +97,31 @@ const Students = () => {
     return courses.filter((c) => courseIds.includes(c.id));
   };
 
-  const getOverallScore = (studentId: string) => {
-    // Average of all 16 weekly scores
+  const getOverallScore = (studentId: string, courseId?: string) => {
     let totalScore = 0;
     for (const w of WEEKS) {
-      totalScore += getWeeklyScore(studentId, w);
+      totalScore += getWeeklyScore(studentId, w, courseId);
     }
     return Math.round(totalScore / 16);
   };
 
-  const getWeeklyScore = (studentId: string, week: number) => {
-    const records = behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week);
+  const getWeeklyScore = (studentId: string, week: number, courseId?: string) => {
+    let records = behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week);
+    if (courseId && courseId !== "all") {
+      records = records.filter((r) => r.course_id === courseId);
+    }
     if (records.length === 0) return 100;
     const total = records.reduce((sum, r) => sum + r.score_change, 0);
     return Math.max(0, Math.min(100, 100 + total));
   };
 
-  const getWeekRecordCount = (studentId: string, week: number) =>
-    behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week).length;
+  const getWeekRecordCount = (studentId: string, week: number, courseId?: string) => {
+    let records = behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week);
+    if (courseId && courseId !== "all") {
+      records = records.filter((r) => r.course_id === courseId);
+    }
+    return records.length;
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-500";
