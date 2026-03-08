@@ -141,8 +141,8 @@ const Auth = () => {
       setLoading(false);
       isTransitioning.current = false;
     } else {
-      // Start cinematic transition
-      setTransitionPhase("flying");
+      // Start cinematic transition while keeping auth background visible
+      setTransitionPhase("hold");
     }
   };
 
