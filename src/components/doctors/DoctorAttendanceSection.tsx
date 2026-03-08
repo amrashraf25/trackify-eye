@@ -4,16 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { ClipboardCheck, ChevronLeft, ChevronRight, UserCheck, UserX, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import SendDoctorAttendanceAlert from "./SendDoctorAttendanceAlert";
 
 const WEEKS = Array.from({ length: 16 }, (_, i) => i + 1);
 
 interface DoctorAttendanceSectionProps {
   doctorId: string;
+  doctorName: string;
   doctorCourses: any[];
   userId?: string;
 }
 
-const DoctorAttendanceSection = ({ doctorId, doctorCourses, userId }: DoctorAttendanceSectionProps) => {
+const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }: DoctorAttendanceSectionProps) => {
   const [selectedWeek, setSelectedWeek] = useState<number>(1);
   const queryClient = useQueryClient();
 
@@ -76,6 +78,7 @@ const DoctorAttendanceSection = ({ doctorId, doctorCourses, userId }: DoctorAtte
           <span className="text-xs font-normal text-muted-foreground ml-1">({attendanceRate}% overall)</span>
         </h3>
         <div className="flex items-center gap-2">
+          <SendDoctorAttendanceAlert doctorId={doctorId} doctorName={doctorName} attendanceRate={attendanceRate} />
           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg" disabled={selectedWeek <= 1}
             onClick={() => setSelectedWeek((w) => w - 1)}>
             <ChevronLeft className="w-4 h-4" />

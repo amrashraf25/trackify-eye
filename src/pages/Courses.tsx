@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import SendBehaviorAlert from "@/components/SendBehaviorAlert";
+import SendAttendanceAlert from "@/components/SendAttendanceAlert";
 
 const negativeActions = [
   { name: "Smoking during lecture", change: -15 },
@@ -548,6 +549,13 @@ const Courses = () => {
                               onClick={() => markAttendance.mutate({ studentId: student.id, status: "late" })}>
                               <Clock className="w-3.5 h-3.5 mr-1" />Late
                             </Button>
+                            {(status === "absent" || status === "late") && (
+                              <SendAttendanceAlert
+                                studentId={student.id}
+                                studentName={student.full_name}
+                                courseName={selectedCourse?.name}
+                              />
+                            )}
                           </div>
                         )}
                       </motion.div>
