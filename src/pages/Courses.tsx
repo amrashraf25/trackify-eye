@@ -111,6 +111,23 @@ const Courses = () => {
     },
   });
 
+  // Fetch all behavior records for the selected week + course (for all students)
+  const { data: weeklyBehaviorRecords = [] } = useQuery({
+    queryKey: ["weekly-behavior-records", selectedCourseId, selectedBehaviorWeek],
+    queryFn: async () => {
+      if (!selectedCourseId) return [];
+      const { data, error } = await supabase
+        .from("behavior_records")
+        .select("*")
+        .eq("course_id", selectedCourseId)
+        .eq("week_number", selectedBehaviorWeek)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCourseId,
+  });
+
   const { data: behaviorHistory = [] } = useQuery({
     queryKey: ["behavior-history-course", selectedCourseId, behaviorStudentId, selectedBehaviorWeek],
     queryFn: async () => {
@@ -147,6 +164,18 @@ const Courses = () => {
   };
 
   const getScore = (studentId: string) => behaviorScores.find((s) => s.student_id === studentId)?.score ?? 100;
+
+  // Weekly score: starts at 100, apply all changes for that week
+  const getWeeklyScore = (studentId: string) => {
+    const records = weeklyBehaviorRecords.filter((r) => r.student_id === studentId);
+    if (records.length === 0) return 100;
+    const total = records.reduce((sum, r) => sum + r.score_change, 0);
+    return Math.max(0, Math.min(100, 100 + total));
+  };
+
+  const getWeeklyRecordCount = (studentId: string) => {
+    return weeklyBehaviorRecords.filter((r) => r.student_id === studentId).length;
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-500";
@@ -215,6 +244,7 @@ const Courses = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["behavior-scores"] });
       queryClient.invalidateQueries({ queryKey: ["behavior-history-course"] });
+      queryClient.invalidateQueries({ queryKey: ["weekly-behavior-records"] });
       toast.success("Behavior recorded");
       setBehaviorDialogOpen(false);
       setSelectedAction("");
@@ -461,7 +491,8 @@ const Courses = () => {
                   </div>
                 ) : (
                   enrolledStudents.map((student, i) => {
-                    const score = getScore(student.id);
+                    const score = getWeeklyScore(student.id);
+                    const recordCount = getWeeklyRecordCount(student.id);
                     return (
                       <motion.div
                         key={student.id}
@@ -479,7 +510,12 @@ const Courses = () => {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-foreground truncate text-sm">{student.full_name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-foreground truncate text-sm">{student.full_name}</p>
+                              {recordCount > 0 && (
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{recordCount} record{recordCount !== 1 ? "s" : ""}</Badge>
+                              )}
+                            </div>
                             <p className="text-[11px] text-muted-foreground font-mono">{student.student_code}</p>
                             <div className="flex items-center gap-3 mt-2">
                               <div className="relative h-2.5 flex-1 rounded-full bg-secondary/50 overflow-hidden">
