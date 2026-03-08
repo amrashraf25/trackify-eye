@@ -19,9 +19,11 @@ const demoAccounts = [
 ];
 
 // Aperture blade component for the camera lens eye
-const ApertureOverlay = ({ size, top, left, closing }: { size: string; top: string; left: string; closing?: boolean }) => {
+const ApertureOverlay = ({ size, top, left, closing, angry }: { size: string; top: string; left: string; closing?: boolean; angry?: boolean }) => {
   const bladeCount = 6;
   const angles = Array.from({ length: bladeCount }, (_, i) => (360 / bladeCount) * i);
+  const bladeColor = angry ? "hsl(0 80% 40%)" : "hsl(220 15% 13%)";
+  const strokeColor = angry ? "hsl(0 70% 55%)" : "hsl(220 10% 22%)";
 
   return (
     <div
@@ -44,8 +46,8 @@ const ApertureOverlay = ({ size, top, left, closing }: { size: string; top: stri
           return (
             <motion.polygon
               key={i}
-              fill="hsl(220 15% 13%)"
-              stroke="hsl(220 10% 22%)"
+              fill={bladeColor}
+              stroke={strokeColor}
               strokeWidth="0.8"
               animate={
                 closing
@@ -65,27 +67,26 @@ const ApertureOverlay = ({ size, top, left, closing }: { size: string; top: stri
   );
 };
 
-// Blue glowing eye overlay for the right eye
-const BlueEyeGlow = ({ size, top, left }: { size: string; top: string; left: string }) => (
-  <div
-    className="absolute rounded-full pointer-events-none"
-    style={{ width: size, height: size, top, left }}
-  >
-    <motion.div
-      className="w-full h-full rounded-full"
-      style={{
-        background: "radial-gradient(circle, hsl(200 100% 60% / 0.6) 0%, hsl(200 100% 50% / 0.3) 40%, transparent 70%)",
-        boxShadow: "0 0 12px 4px hsl(200 100% 60% / 0.3)",
-      }}
-      animate={{
-        opacity: [0.7, 1, 0.7],
-        scale: [0.95, 1.05, 0.95],
-      }}
-      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-    />
-  </div>
-);
-
+const EyeGlow = ({ size, top, left, angry }: { size: string; top: string; left: string; angry?: boolean }) => {
+  const baseHue = angry ? "0" : "200";
+  return (
+    <div
+      className="absolute rounded-full pointer-events-none"
+      style={{ width: size, height: size, top, left }}
+    >
+      <motion.div
+        className="w-full h-full rounded-full"
+        animate={{
+          opacity: [0.7, 1, 0.7],
+          scale: [0.95, 1.05, 0.95],
+          background: `radial-gradient(circle, hsl(${baseHue} 100% 60% / 0.6) 0%, hsl(${baseHue} 100% 50% / 0.3) 40%, transparent 70%)`,
+          boxShadow: `0 0 12px 4px hsl(${baseHue} 100% 60% / 0.3)`,
+        }}
+        transition={{ duration: angry ? 0.3 : 2, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </div>
+  );
+};
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -95,6 +96,7 @@ const Auth = () => {
     "idle" | "hold" | "flying" | "reveal"
   >("idle");
   const isTransitioning = useRef(false);
+  const [errorFlash, setErrorFlash] = useState(false);
 
   // Synthesize a whoosh sound using Web Audio API
   const playWhoosh = () => {
@@ -182,6 +184,9 @@ const Auth = () => {
       toast.error(error.message);
       setLoading(false);
       isTransitioning.current = false;
+      // Flash eyes red
+      setErrorFlash(true);
+      setTimeout(() => setErrorFlash(false), 1500);
     } else {
       // Start cinematic transition while keeping auth background visible
       setTransitionPhase("hold");
@@ -312,9 +317,10 @@ const Auth = () => {
                 top="27%"
                 left="22%"
                 closing={transitionPhase === "flying"}
+                angry={errorFlash}
               />
-              {/* Right eye: Blue glowing eye */}
-              <BlueEyeGlow size="17%" top="27%" left="53%" />
+              {/* Right eye: Glowing eye */}
+              <EyeGlow size="17%" top="27%" left="53%" angry={errorFlash} />
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>
           </motion.div>
