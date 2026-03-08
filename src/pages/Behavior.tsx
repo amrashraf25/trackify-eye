@@ -332,7 +332,7 @@ const Behavior = () => {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground">{record.action_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {record.score_change > 0 ? "+" : ""}{record.score_change}% • {format(new Date(record.created_at), "MMM dd, yyyy HH:mm")}
+                            {record.score_change > 0 ? "+" : ""}{record.score_change}% • {record.week_number ? `Week ${record.week_number} • ` : ""}{format(new Date(record.created_at), "MMM dd, yyyy HH:mm")}
                           </p>
                           {record.notes && <p className="text-xs text-muted-foreground mt-1">{record.notes}</p>}
                         </div>
