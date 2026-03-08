@@ -31,6 +31,7 @@ const Students = () => {
   const { role } = useAuth();
   const queryClient = useQueryClient();
   const [selectedBehaviorWeek, setSelectedBehaviorWeek] = useState<number | "all">("all");
+  const [selectedBehaviorCourse, setSelectedBehaviorCourse] = useState<string>("all");
   const [editOpen, setEditOpen] = useState(false);
   const [editData, setEditData] = useState({
     full_name: "", student_code: "", email: "", phone: "", year_level: "1", status: "active"
@@ -96,24 +97,31 @@ const Students = () => {
     return courses.filter((c) => courseIds.includes(c.id));
   };
 
-  const getOverallScore = (studentId: string) => {
-    // Average of all 16 weekly scores
+  const getOverallScore = (studentId: string, courseId?: string) => {
     let totalScore = 0;
     for (const w of WEEKS) {
-      totalScore += getWeeklyScore(studentId, w);
+      totalScore += getWeeklyScore(studentId, w, courseId);
     }
     return Math.round(totalScore / 16);
   };
 
-  const getWeeklyScore = (studentId: string, week: number) => {
-    const records = behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week);
+  const getWeeklyScore = (studentId: string, week: number, courseId?: string) => {
+    let records = behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week);
+    if (courseId && courseId !== "all") {
+      records = records.filter((r) => r.course_id === courseId);
+    }
     if (records.length === 0) return 100;
     const total = records.reduce((sum, r) => sum + r.score_change, 0);
     return Math.max(0, Math.min(100, 100 + total));
   };
 
-  const getWeekRecordCount = (studentId: string, week: number) =>
-    behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week).length;
+  const getWeekRecordCount = (studentId: string, week: number, courseId?: string) => {
+    let records = behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week);
+    if (courseId && courseId !== "all") {
+      records = records.filter((r) => r.course_id === courseId);
+    }
+    return records.length;
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-500";
@@ -495,9 +503,9 @@ const Students = () => {
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Year Level</p>
                     <p className="text-xl font-bold text-foreground">{selectedStudent.year_level}</p>
                   </div>
-                  <div className="bg-secondary/30 rounded-xl p-3">
+                   <div className="bg-secondary/30 rounded-xl p-3">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Overall Behavior</p>
-                    <p className={`text-xl font-bold ${getScoreColor(getOverallScore(selectedStudent.id))}`}>{getOverallScore(selectedStudent.id)}%</p>
+                    <p className={`text-xl font-bold ${getScoreColor(getOverallScore(selectedStudent.id, selectedBehaviorCourse))}`}>{getOverallScore(selectedStudent.id, selectedBehaviorCourse)}%</p>
                   </div>
                 </div>
 
@@ -506,7 +514,9 @@ const Students = () => {
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-bold text-foreground flex items-center gap-2 text-xs">
                       <Calendar className="w-3.5 h-3.5 text-primary" />
-                      Weekly Behavior Score
+                      {selectedBehaviorCourse !== "all"
+                        ? `Behavior — ${getStudentCourses(selectedStudent.id).find(c => c.id === selectedBehaviorCourse)?.name || "Course"}`
+                        : "Weekly Behavior Score"}
                     </h4>
                     {canManage && (
                       <AlertDialog>
@@ -519,7 +529,7 @@ const Students = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Reset Behavior Score</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will delete all behavior records for <strong>{selectedStudent.full_name}</strong> and reset their score to 100%. This cannot be undone.
+                              This will delete {selectedBehaviorCourse !== "all" ? "course-specific" : "all"} behavior records for <strong>{selectedStudent.full_name}</strong> and reset the score. This cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -527,11 +537,16 @@ const Students = () => {
                             <AlertDialogAction
                               onClick={async () => {
                                 try {
-                                  await supabase.from("behavior_records").delete().eq("student_id", selectedStudent.id);
-                                  await supabase.from("behavior_scores").update({ score: 100 }).eq("student_id", selectedStudent.id);
+                                  if (selectedBehaviorCourse !== "all") {
+                                    await supabase.from("behavior_records").delete().eq("student_id", selectedStudent.id).eq("course_id", selectedBehaviorCourse);
+                                  } else {
+                                    await supabase.from("behavior_records").delete().eq("student_id", selectedStudent.id);
+                                    await supabase.from("behavior_scores").update({ score: 100 }).eq("student_id", selectedStudent.id);
+                                  }
                                   queryClient.invalidateQueries({ queryKey: ["behavior-scores"] });
                                   queryClient.invalidateQueries({ queryKey: ["behavior-records"] });
-                                  toast.success("Behavior score reset to 100%");
+                                  queryClient.invalidateQueries({ queryKey: ["student-behavior-records"] });
+                                  toast.success("Behavior score reset");
                                 } catch (err: any) {
                                   toast.error(err.message);
                                 }
@@ -545,10 +560,39 @@ const Students = () => {
                       </AlertDialog>
                     )}
                   </div>
+
+                  {/* Course filter */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <BookOpen className="w-3 h-3 text-primary" />
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Filter by Course</span>
+                    </div>
+                    <div className="flex gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => setSelectedBehaviorCourse("all")}
+                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                          selectedBehaviorCourse === "all"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                        }`}
+                      >All</button>
+                      {getStudentCourses(selectedStudent.id).map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => setSelectedBehaviorCourse(c.id)}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                            selectedBehaviorCourse === c.id
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                          }`}
+                        >{c.course_code}</button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-8 gap-1.5 mb-3">
                     {WEEKS.map((w) => {
-                      const weekScore = getWeeklyScore(selectedStudent.id, w);
-                      const count = getWeekRecordCount(selectedStudent.id, w);
+                      const weekScore = getWeeklyScore(selectedStudent.id, w, selectedBehaviorCourse);
+                      const count = getWeekRecordCount(selectedStudent.id, w, selectedBehaviorCourse);
                       const isActive = selectedBehaviorWeek === w;
                       return (
                         <button
@@ -578,18 +622,18 @@ const Students = () => {
                     <div className="bg-secondary/30 rounded-xl p-3">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs text-muted-foreground">Week {selectedBehaviorWeek} Score</p>
-                        <p className={`text-lg font-bold ${getScoreColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek))}`}>
-                          {getWeeklyScore(selectedStudent.id, selectedBehaviorWeek)}%
+                        <p className={`text-lg font-bold ${getScoreColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse))}`}>
+                          {getWeeklyScore(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse)}%
                         </p>
                       </div>
                       <div className="relative h-2 w-full rounded-full bg-secondary overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${getProgressColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek))}`}
-                          style={{ width: `${getWeeklyScore(selectedStudent.id, selectedBehaviorWeek)}%` }}
+                          className={`h-full rounded-full transition-all ${getProgressColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse))}`}
+                          style={{ width: `${getWeeklyScore(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse)}%` }}
                         />
                       </div>
                       <p className="text-[10px] text-muted-foreground mt-1">
-                        {getWeekRecordCount(selectedStudent.id, selectedBehaviorWeek)} record(s) this week
+                        {getWeekRecordCount(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse)} record(s) this week
                       </p>
                     </div>
                   )}
