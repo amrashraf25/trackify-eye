@@ -111,12 +111,18 @@ const Auth = () => {
 
   // Animation phase sequencer
   useEffect(() => {
-    if (transitionPhase === "flying") {
-      const t = setTimeout(() => setTransitionPhase("reveal"), 1800);
+    if (transitionPhase === "hold") {
+      const t = setTimeout(() => setTransitionPhase("flying"), 220);
       return () => clearTimeout(t);
     }
+
+    if (transitionPhase === "flying") {
+      const t = setTimeout(() => setTransitionPhase("reveal"), 1300);
+      return () => clearTimeout(t);
+    }
+
     if (transitionPhase === "reveal") {
-      const t = setTimeout(() => navigate("/"), 400);
+      const t = setTimeout(() => navigate("/"), 180);
       return () => clearTimeout(t);
     }
   }, [transitionPhase, navigate]);
