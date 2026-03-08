@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import SendBehaviorAlert from "@/components/SendBehaviorAlert";
+import SendAttendanceAlert from "@/components/SendAttendanceAlert";
 
 const negativeActions = [
   { name: "Smoking during lecture", change: -15 },
