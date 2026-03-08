@@ -67,27 +67,26 @@ const ApertureOverlay = ({ size, top, left, closing, angry }: { size: string; to
   );
 };
 
-// Blue glowing eye overlay for the right eye
-const BlueEyeGlow = ({ size, top, left }: { size: string; top: string; left: string }) => (
-  <div
-    className="absolute rounded-full pointer-events-none"
-    style={{ width: size, height: size, top, left }}
-  >
-    <motion.div
-      className="w-full h-full rounded-full"
-      style={{
-        background: "radial-gradient(circle, hsl(200 100% 60% / 0.6) 0%, hsl(200 100% 50% / 0.3) 40%, transparent 70%)",
-        boxShadow: "0 0 12px 4px hsl(200 100% 60% / 0.3)",
-      }}
-      animate={{
-        opacity: [0.7, 1, 0.7],
-        scale: [0.95, 1.05, 0.95],
-      }}
-      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-    />
-  </div>
-);
-
+const EyeGlow = ({ size, top, left, angry }: { size: string; top: string; left: string; angry?: boolean }) => {
+  const baseHue = angry ? "0" : "200";
+  return (
+    <div
+      className="absolute rounded-full pointer-events-none"
+      style={{ width: size, height: size, top, left }}
+    >
+      <motion.div
+        className="w-full h-full rounded-full"
+        animate={{
+          opacity: [0.7, 1, 0.7],
+          scale: [0.95, 1.05, 0.95],
+          background: `radial-gradient(circle, hsl(${baseHue} 100% 60% / 0.6) 0%, hsl(${baseHue} 100% 50% / 0.3) 40%, transparent 70%)`,
+          boxShadow: `0 0 12px 4px hsl(${baseHue} 100% 60% / 0.3)`,
+        }}
+        transition={{ duration: angry ? 0.3 : 2, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </div>
+  );
+};
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
