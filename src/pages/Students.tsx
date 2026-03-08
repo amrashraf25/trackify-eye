@@ -31,6 +31,7 @@ const Students = () => {
   const { role } = useAuth();
   const queryClient = useQueryClient();
   const [selectedBehaviorWeek, setSelectedBehaviorWeek] = useState<number | "all">("all");
+  const [selectedBehaviorCourse, setSelectedBehaviorCourse] = useState<string>("all");
   const [editOpen, setEditOpen] = useState(false);
   const [editData, setEditData] = useState({
     full_name: "", student_code: "", email: "", phone: "", year_level: "1", status: "active"
