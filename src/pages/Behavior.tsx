@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+import SendBehaviorAlert from "@/components/SendBehaviorAlert";
 
 const negativeActions = [
   { name: "Smoking during lecture", change: -15 },
