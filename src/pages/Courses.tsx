@@ -165,6 +165,18 @@ const Courses = () => {
 
   const getScore = (studentId: string) => behaviorScores.find((s) => s.student_id === studentId)?.score ?? 100;
 
+  // Weekly score: starts at 100, apply all changes for that week
+  const getWeeklyScore = (studentId: string) => {
+    const records = weeklyBehaviorRecords.filter((r) => r.student_id === studentId);
+    if (records.length === 0) return 100;
+    const total = records.reduce((sum, r) => sum + r.score_change, 0);
+    return Math.max(0, Math.min(100, 100 + total));
+  };
+
+  const getWeeklyRecordCount = (studentId: string) => {
+    return weeklyBehaviorRecords.filter((r) => r.student_id === studentId).length;
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-500";
     if (score >= 60) return "text-amber-500";
