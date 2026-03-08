@@ -173,35 +173,63 @@ const Auth = () => {
             <motion.div
               className="absolute left-1/2 top-1/2 flex items-center justify-center"
               style={{ x: "-50%", y: "-50%" }}
-              initial={{ scale: 1, y: -190, opacity: 1 }}
+              initial={{ scale: 1, y: -190, opacity: 1, rotate: 0 }}
               animate={
                 transitionPhase === "flying"
-                  ? { scale: [1, 1.2, 8], y: [-190, 0, 0], opacity: [1, 1, 0] }
+                  ? { scale: [1, 1.15, 1.3, 8], y: [-190, -60, 0, 0], opacity: [1, 1, 1, 0], rotate: [0, -3, 2, 0] }
                   : transitionPhase === "reveal"
-                    ? { scale: 8, y: 0, opacity: 0 }
-                    : { scale: 1, y: -190, opacity: 1 }
+                    ? { scale: 8, y: 0, opacity: 0, rotate: 0 }
+                    : { scale: 1, y: -190, opacity: 1, rotate: 0 }
               }
               transition={{
-                duration: 1.3,
+                duration: 1.4,
                 ease: [0.16, 1, 0.3, 1],
-                times: [0, 0.35, 1],
+                times: [0, 0.25, 0.45, 1],
               }}
             >
+              {/* Pulsing glow ring */}
               <motion.div
-                className="absolute w-96 h-96 rounded-full"
+                className="absolute w-72 h-72 rounded-full"
                 style={{
-                  background:
-                    "radial-gradient(circle, hsl(200 100% 60% / 0.35) 0%, hsl(200 100% 50% / 0.08) 50%, transparent 72%)",
-                  filter: "blur(36px)",
+                  background: "radial-gradient(circle, hsl(200 100% 65% / 0.5) 0%, hsl(220 80% 55% / 0.15) 45%, transparent 70%)",
+                  filter: "blur(30px)",
                 }}
-                animate={{ scale: [1, 1.4, 2.8], opacity: [0.5, 0.35, 0] }}
-                transition={{ duration: 1.3 }}
+                animate={
+                  transitionPhase === "flying"
+                    ? { scale: [0.8, 1.6, 3.5], opacity: [0.7, 0.5, 0] }
+                    : { scale: 0.8, opacity: 0.5 }
+                }
+                transition={{ duration: 1.4, ease: "easeOut" }}
               />
+              {/* Secondary outer glow ring */}
+              <motion.div
+                className="absolute w-[28rem] h-[28rem] rounded-full"
+                style={{
+                  background: "radial-gradient(circle, hsl(260 80% 60% / 0.2) 0%, transparent 60%)",
+                  filter: "blur(50px)",
+                }}
+                animate={
+                  transitionPhase === "flying"
+                    ? { scale: [0.6, 1.2, 4], opacity: [0.4, 0.3, 0] }
+                    : { scale: 0.6, opacity: 0.3 }
+                }
+                transition={{ duration: 1.4, ease: "easeOut", delay: 0.05 }}
+              />
+              {/* Owl image with dynamic glow */}
               <motion.img
                 src={owlMascot}
                 alt="Trackify Owl Flying"
                 className="w-44 h-44 object-contain relative z-10"
-                style={{ filter: "drop-shadow(0 0 50px hsl(200 100% 60% / 0.45))" }}
+                animate={
+                  transitionPhase === "flying"
+                    ? { filter: [
+                        "drop-shadow(0 0 30px hsl(200 100% 60% / 0.4))",
+                        "drop-shadow(0 0 60px hsl(200 100% 60% / 0.7)) drop-shadow(0 0 120px hsl(260 80% 60% / 0.4))",
+                        "drop-shadow(0 0 80px hsl(200 100% 60% / 0.9)) drop-shadow(0 0 160px hsl(260 80% 60% / 0.5))",
+                      ] }
+                    : { filter: "drop-shadow(0 0 30px hsl(200 100% 60% / 0.4))" }
+                }
+                transition={{ duration: 1.4, ease: "easeOut" }}
               />
             </motion.div>
           </motion.div>
