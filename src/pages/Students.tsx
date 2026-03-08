@@ -248,6 +248,66 @@ const Students = () => {
     return courses.filter((c) => !enrolledCourseIds.includes(c.id));
   };
 
+  const openEditDialog = (student: any) => {
+    setEditData({
+      full_name: student.full_name,
+      student_code: student.student_code,
+      email: student.email || "",
+      phone: student.phone || "",
+      year_level: String(student.year_level),
+      status: student.status,
+    });
+    setEditAvatarFile(null);
+    setEditAvatarPreview(student.avatar_url || null);
+    setEditOpen(true);
+  };
+
+  const handleEditAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { toast.error("Image must be less than 5MB"); return; }
+      setEditAvatarFile(file);
+      setEditAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const updateStudent = useMutation({
+    mutationFn: async () => {
+      if (!selectedStudent) return;
+      if (!editData.full_name.trim() || !editData.student_code.trim()) {
+        throw new Error("Name and student code are required");
+      }
+
+      let avatar_url = selectedStudent.avatar_url;
+      if (editAvatarFile) {
+        const ext = editAvatarFile.name.split(".").pop();
+        const fileName = `${editData.student_code}_${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, editAvatarFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+        avatar_url = urlData.publicUrl;
+      }
+
+      const { error } = await supabase.from("students").update({
+        full_name: editData.full_name.trim(),
+        student_code: editData.student_code.trim(),
+        email: editData.email.trim() || null,
+        phone: editData.phone.trim() || null,
+        year_level: parseInt(editData.year_level),
+        status: editData.status,
+        avatar_url,
+      }).eq("id", selectedStudent.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast.success("Student updated successfully");
+      setEditOpen(false);
+      refetch();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <MainLayout title="Students">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
