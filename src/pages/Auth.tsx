@@ -317,9 +317,10 @@ const Auth = () => {
                 top="27%"
                 left="22%"
                 closing={transitionPhase === "flying"}
+                angry={errorFlash}
               />
-              {/* Right eye: Blue glowing eye */}
-              <BlueEyeGlow size="17%" top="27%" left="53%" />
+              {/* Right eye: Glowing eye */}
+              <EyeGlow size="17%" top="27%" left="53%" angry={errorFlash} />
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>
           </motion.div>
