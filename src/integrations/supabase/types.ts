@@ -262,6 +262,63 @@ export type Database = {
           },
         ]
       }
+      doctor_behavior_records: {
+        Row: {
+          action_name: string
+          action_type: string
+          created_at: string
+          doctor_id: string
+          id: string
+          notes: string | null
+          recorded_by: string
+          score_change: number
+          week_number: number | null
+        }
+        Insert: {
+          action_name: string
+          action_type: string
+          created_at?: string
+          doctor_id: string
+          id?: string
+          notes?: string | null
+          recorded_by: string
+          score_change: number
+          week_number?: number | null
+        }
+        Update: {
+          action_name?: string
+          action_type?: string
+          created_at?: string
+          doctor_id?: string
+          id?: string
+          notes?: string | null
+          recorded_by?: string
+          score_change?: number
+          week_number?: number | null
+        }
+        Relationships: []
+      }
+      doctor_behavior_scores: {
+        Row: {
+          doctor_id: string
+          id: string
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          doctor_id: string
+          id?: string
+          score?: number
+          updated_at?: string
+        }
+        Update: {
+          doctor_id?: string
+          id?: string
+          score?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       enrollments: {
         Row: {
           course_id: string
