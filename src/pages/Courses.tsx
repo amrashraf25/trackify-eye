@@ -112,7 +112,7 @@ const Courses = () => {
   });
 
   const { data: behaviorHistory = [] } = useQuery({
-    queryKey: ["behavior-history-course", selectedCourseId, behaviorStudentId],
+    queryKey: ["behavior-history-course", selectedCourseId, behaviorStudentId, selectedBehaviorWeek],
     queryFn: async () => {
       if (!behaviorStudentId || !selectedCourseId) return [];
       const { data, error } = await supabase
@@ -120,6 +120,7 @@ const Courses = () => {
         .select("*")
         .eq("student_id", behaviorStudentId)
         .eq("course_id", selectedCourseId)
+        .eq("week_number", selectedBehaviorWeek)
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) throw error;
