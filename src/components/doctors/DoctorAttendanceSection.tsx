@@ -190,7 +190,7 @@ const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }
       </div>
 
       {/* Score display */}
-      <div className="flex items-center gap-4 mb-5 p-4 bg-secondary/30 rounded-xl">
+      <div className="mb-5 p-4 bg-secondary/30 rounded-xl space-y-3">
         <div className="flex-1">
           <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
             {selectedCourseName ? `${selectedCourseName} Rate` : selectedWeek !== "all" ? `Week ${selectedWeek} Rate` : "Overall Attendance Rate"}
@@ -207,6 +207,35 @@ const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }
             <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-amber-500" /> {lateCount} Late</span>
           </div>
         </div>
+
+        {/* Per-course breakdown when "All" is selected */}
+        {selectedCourseId === "all" && doctorCourses.length > 0 && (
+          <div className="border-t border-border/20 pt-3 space-y-2">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Per Course</p>
+            {doctorCourses.map((course) => {
+              let courseRecords = attendance.filter((a) => a.course_id === course.id);
+              if (selectedWeek !== "all") {
+                courseRecords = courseRecords.filter((a) => a.week_number === parseInt(selectedWeek));
+              }
+              const coursePresent = courseRecords.filter((a) => a.status === "present").length;
+              const courseTotal = courseRecords.length;
+              const courseRate = courseTotal > 0 ? Math.round((coursePresent / courseTotal) * 100) : 0;
+              const courseColor = courseRate >= 80 ? "bg-emerald-500" : courseRate >= 60 ? "bg-amber-500" : courseTotal === 0 ? "bg-secondary" : "bg-destructive";
+              const courseTextColor = courseRate >= 80 ? "text-emerald-500" : courseRate >= 60 ? "text-amber-500" : courseTotal === 0 ? "text-muted-foreground" : "text-destructive";
+              return (
+                <div key={course.id} className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium text-foreground w-16 truncate">{course.course_code}</span>
+                  <div className="relative h-1.5 flex-1 rounded-full bg-secondary overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${courseColor}`} style={{ width: `${courseRate}%` }} />
+                  </div>
+                  <span className={`text-[10px] font-bold w-8 text-right ${courseTextColor}`}>
+                    {courseTotal > 0 ? `${courseRate}%` : "—"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Per-week attendance marking (when a specific course + week is selected) */}
