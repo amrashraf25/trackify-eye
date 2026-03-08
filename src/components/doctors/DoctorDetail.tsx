@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { User, BookOpen, Users, Link2, Trash2, Mail, GraduationCap, Award } from "lucide-react";
+import { User, BookOpen, Link2, Trash2, Mail, GraduationCap, Award, Pencil, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -21,7 +22,24 @@ interface DoctorDetailProps {
 const DoctorDetail = ({ doctor, doctorCourses, unassignedCourses, canManage }: DoctorDetailProps) => {
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedCourseToAssign, setSelectedCourseToAssign] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
+  const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
+
+  const clearPreviewUrl = () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => clearPreviewUrl();
+  }, []);
 
   const assignCourse = useMutation({
     mutationFn: async () => {
@@ -64,6 +82,79 @@ const DoctorDetail = ({ doctor, doctorCourses, unassignedCourses, canManage }: D
     onError: (err: any) => toast.error(err.message),
   });
 
+  const updateDoctor = useMutation({
+    mutationFn: async () => {
+      if (!doctor?.id) throw new Error("Doctor not found");
+
+      const trimmedName = editName.trim();
+      if (!trimmedName) throw new Error("Doctor name is required");
+
+      let avatar_url = doctor.avatar_url ?? null;
+
+      if (editAvatarFile) {
+        const ext = editAvatarFile.name.split(".").pop() || "jpg";
+        const fileName = `doctors/${doctor.id}_${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, editAvatarFile, { upsert: true });
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+        avatar_url = urlData.publicUrl;
+      }
+
+      const { data, error } = await supabase.functions.invoke("update-doctor-profile", {
+        body: {
+          doctor_id: doctor.id,
+          full_name: trimmedName,
+          avatar_url,
+        },
+      });
+
+      if (error) throw new Error(error.message || "Failed to update doctor profile");
+      if (data?.error) throw new Error(data.error);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["doctors-profiles"] });
+      toast.success("Doctor profile updated");
+      clearPreviewUrl();
+      setEditAvatarFile(null);
+      setEditOpen(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const openEditDialog = () => {
+    clearPreviewUrl();
+    setEditAvatarFile(null);
+    setEditName(doctor.full_name || "");
+    setEditAvatarPreview(doctor.avatar_url || null);
+    setEditOpen(true);
+  };
+
+  const closeEditDialog = (open: boolean) => {
+    if (!open) {
+      clearPreviewUrl();
+      setEditAvatarFile(null);
+      setEditAvatarPreview(doctor.avatar_url || null);
+    }
+    setEditOpen(open);
+  };
+
+  const handleEditAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    clearPreviewUrl();
+    const previewUrl = URL.createObjectURL(file);
+    previewUrlRef.current = previewUrl;
+    setEditAvatarFile(file);
+    setEditAvatarPreview(previewUrl);
+  };
+
   const totalCredits = doctorCourses.reduce((sum, c) => sum + (c.credits || 0), 0);
 
   return (
@@ -95,25 +186,88 @@ const DoctorDetail = ({ doctor, doctorCourses, unassignedCourses, canManage }: D
               </div>
             </div>
             {canManage && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="icon" className="rounded-xl border-destructive/20 text-destructive/70 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/40 shrink-0 transition-all">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Doctor</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete <strong>{doctor.full_name}</strong>? Their courses will be unassigned.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => deleteDoctor.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex items-center gap-2 shrink-0">
+                <Dialog open={editOpen} onOpenChange={closeEditDialog}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={openEditDialog}
+                      className="rounded-xl border-border/40 text-foreground/80 hover:text-foreground hover:bg-secondary/40"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="glass">
+                    <DialogHeader>
+                      <DialogTitle>Edit Doctor Profile</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="flex flex-col items-center gap-3">
+                        <div
+                          onClick={() => editFileInputRef.current?.click()}
+                          className="w-24 h-24 rounded-2xl bg-secondary/40 border-2 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:border-primary/40 transition-colors overflow-hidden"
+                        >
+                          {editAvatarPreview ? (
+                            <img src={editAvatarPreview} alt="Doctor profile preview" className="w-full h-full object-cover rounded-2xl" />
+                          ) : (
+                            <div className="text-center">
+                              <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
+                              <span className="text-[10px] text-muted-foreground">Photo</span>
+                            </div>
+                          )}
+                        </div>
+                        <input
+                          ref={editFileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditAvatarSelect}
+                          className="hidden"
+                        />
+                        <p className="text-[10px] text-muted-foreground">Click image to upload a new photo</p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label>Full Name</Label>
+                        <Input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="Doctor name"
+                          className="rounded-xl"
+                        />
+                      </div>
+
+                      <Button
+                        onClick={() => updateDoctor.mutate()}
+                        disabled={updateDoctor.isPending}
+                        className="w-full rounded-xl bg-gradient-to-r from-primary to-accent"
+                      >
+                        {updateDoctor.isPending ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="icon" className="rounded-xl border-destructive/20 text-destructive/70 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/40 transition-all">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Doctor</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete <strong>{doctor.full_name}</strong>? Their courses will be unassigned.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteDoctor.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             )}
           </div>
 
