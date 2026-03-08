@@ -9,7 +9,7 @@ import { Mail, Lock, Shield, User, Stethoscope, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import AnimatedBackground from "@/components/AnimatedBackground";
 import owlMascot from "@/assets/owl_mascot.png";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const demoAccounts = [
   { role: "Admin", email: "admin@trackify.com", password: "admin123", icon: Shield, color: "text-destructive", bg: "bg-destructive/10" },
@@ -18,21 +18,73 @@ const demoAccounts = [
   { role: "Student", email: "student@trackify.com", password: "student123", icon: User, color: "text-emerald-500", bg: "bg-emerald-500/10" },
 ];
 
+// Aperture blade component
+const ApertureOverlay = ({ size, top, left }: { size: string; top: string; left: string }) => {
+  const bladeCount = 6;
+  const angles = Array.from({ length: bladeCount }, (_, i) => (360 / bladeCount) * i);
+
+  return (
+    <div
+      className="absolute rounded-full overflow-hidden pointer-events-none"
+      style={{ width: size, height: size, top, left }}
+    >
+      <motion.svg viewBox="0 0 100 100" className="w-full h-full">
+        {angles.map((angle, i) => {
+          const rad = (a: number) => (a * Math.PI) / 180;
+          const cx = 50, cy = 50, R = 46, r = 4;
+          // Open positions (thin slivers at edge)
+          const openP1 = `${cx + R * Math.cos(rad(angle - 8))} ${cy + R * Math.sin(rad(angle - 8))}`;
+          const openP2 = `${cx + R * Math.cos(rad(angle + 8))} ${cy + R * Math.sin(rad(angle + 8))}`;
+          const openP3 = `${cx + R * Math.cos(rad(angle))} ${cy + R * Math.sin(rad(angle))}`;
+          const openPoints = `${openP1}, ${openP2}, ${openP3}`;
+          // Closed positions (cover center)
+          const closedP1 = `${cx + R * Math.cos(rad(angle - 28))} ${cy + R * Math.sin(rad(angle - 28))}`;
+          const closedP2 = `${cx + R * Math.cos(rad(angle + 28))} ${cy + R * Math.sin(rad(angle + 28))}`;
+          const closedP3 = `${cx + r * Math.cos(rad(angle))} ${cy + r * Math.sin(rad(angle))}`;
+          const closedPoints = `${closedP1}, ${closedP2}, ${closedP3}`;
+
+          return (
+            <motion.polygon
+              key={i}
+              fill="hsl(220 15% 13%)"
+              stroke="hsl(220 10% 22%)"
+              strokeWidth="0.8"
+              animate={{
+                points: [openPoints, openPoints, closedPoints, closedPoints, openPoints],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+                repeatDelay: 3,
+              }}
+            />
+          );
+        })}
+      </motion.svg>
+    </div>
+  );
+};
+
 const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [flyAway, setFlyAway] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) navigate("/");
+      if (session && !flyAway) {
+        // If already logged in on mount, just go
+        navigate("/");
+      }
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate("/");
     });
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, flyAway]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,10 +96,11 @@ const Auth = () => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast.error(error.message);
+      setLoading(false);
     } else {
-      toast.success("Logged in successfully");
+      // Trigger fly animation, navigate after it completes
+      setFlyAway(true);
     }
-    setLoading(false);
   };
 
   const handleQuickLogin = (acc: typeof demoAccounts[0]) => {
@@ -58,11 +111,50 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       <AnimatedBackground />
-      
+
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="w-full max-w-md space-y-4 relative z-10">
+      {/* Fly-away owl overlay */}
+      <AnimatePresence>
+        {flyAway && (
+          <>
+            {/* Owl grows, flies up */}
+            <motion.div
+              className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
+            >
+              <motion.img
+                src={owlMascot}
+                alt="Trackify Owl"
+                className="object-contain drop-shadow-[0_0_80px_hsl(217_91%_60%/0.6)]"
+                initial={{ width: 160, height: 160, y: 0, scale: 1 }}
+                animate={{
+                  scale: [1, 1.8, 2.5, 3],
+                  y: [0, -20, -60, -800],
+                  rotate: [0, -3, 3, 0],
+                }}
+                transition={{ duration: 1.8, ease: [0.25, 0.1, 0.25, 1] }}
+              />
+            </motion.div>
+            {/* Dark overlay that covers screen */}
+            <motion.div
+              className="fixed inset-0 z-40 bg-background"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.0, duration: 0.8 }}
+              onAnimationComplete={() => navigate("/")}
+            />
+          </>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        className="w-full max-w-md space-y-4 relative z-10"
+        animate={flyAway ? { opacity: 0, scale: 0.9 } : { opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         {/* Owl Hero */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
@@ -81,45 +173,8 @@ const Auth = () => {
                 alt="Trackify Owl"
                 className="w-40 h-40 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)]"
               />
-              {/* Camera aperture blades animation */}
-              <div className="absolute top-[23%] left-[13%] w-[31%] h-[31%] rounded-full overflow-hidden">
-                <motion.svg
-                  viewBox="0 0 100 100"
-                  className="w-full h-full"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  {/* 6 aperture blades */}
-                  {[0, 60, 120, 180, 240, 300].map((angle, i) => (
-                    <motion.polygon
-                      key={i}
-                      fill="hsl(0 0% 12%)"
-                      stroke="hsl(0 0% 25%)"
-                      strokeWidth="0.5"
-                      animate={{
-                        points: [
-                          // Open: blades retracted to edges
-                          `${50 + 48 * Math.cos((angle - 15) * Math.PI / 180)} ${50 + 48 * Math.sin((angle - 15) * Math.PI / 180)}, ${50 + 48 * Math.cos((angle + 15) * Math.PI / 180)} ${50 + 48 * Math.sin((angle + 15) * Math.PI / 180)}, ${50 + 52 * Math.cos(angle * Math.PI / 180)} ${50 + 52 * Math.sin(angle * Math.PI / 180)}`,
-                          // Open
-                          `${50 + 48 * Math.cos((angle - 15) * Math.PI / 180)} ${50 + 48 * Math.sin((angle - 15) * Math.PI / 180)}, ${50 + 48 * Math.cos((angle + 15) * Math.PI / 180)} ${50 + 48 * Math.sin((angle + 15) * Math.PI / 180)}, ${50 + 52 * Math.cos(angle * Math.PI / 180)} ${50 + 52 * Math.sin(angle * Math.PI / 180)}`,
-                          // Closed: blades cover center
-                          `${50 + 42 * Math.cos((angle - 30) * Math.PI / 180)} ${50 + 42 * Math.sin((angle - 30) * Math.PI / 180)}, ${50 + 42 * Math.cos((angle + 30) * Math.PI / 180)} ${50 + 42 * Math.sin((angle + 30) * Math.PI / 180)}, ${50 + 5 * Math.cos(angle * Math.PI / 180)} ${50 + 5 * Math.sin(angle * Math.PI / 180)}`,
-                          // Closed
-                          `${50 + 42 * Math.cos((angle - 30) * Math.PI / 180)} ${50 + 42 * Math.sin((angle - 30) * Math.PI / 180)}, ${50 + 42 * Math.cos((angle + 30) * Math.PI / 180)} ${50 + 42 * Math.sin((angle + 30) * Math.PI / 180)}, ${50 + 5 * Math.cos(angle * Math.PI / 180)} ${50 + 5 * Math.sin(angle * Math.PI / 180)}`,
-                          // Open again
-                          `${50 + 48 * Math.cos((angle - 15) * Math.PI / 180)} ${50 + 48 * Math.sin((angle - 15) * Math.PI / 180)}, ${50 + 48 * Math.cos((angle + 15) * Math.PI / 180)} ${50 + 48 * Math.sin((angle + 15) * Math.PI / 180)}, ${50 + 52 * Math.cos(angle * Math.PI / 180)} ${50 + 52 * Math.sin(angle * Math.PI / 180)}`,
-                        ],
-                      }}
-                      transition={{
-                        duration: 4,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        repeatDelay: 2,
-                      }}
-                    />
-                  ))}
-                </motion.svg>
-              </div>
+              {/* Aperture on the camera lens eye - adjusted to fit */}
+              <ApertureOverlay size="19%" top="29%" left="19%" />
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>
           </motion.div>
@@ -237,7 +292,7 @@ const Auth = () => {
             </CardContent>
           </Card>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 };
