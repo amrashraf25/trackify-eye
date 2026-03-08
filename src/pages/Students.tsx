@@ -591,8 +591,8 @@ const Students = () => {
                   </div>
                   <div className="grid grid-cols-8 gap-1.5 mb-3">
                     {WEEKS.map((w) => {
-                      const weekScore = getWeeklyScore(selectedStudent.id, w);
-                      const count = getWeekRecordCount(selectedStudent.id, w);
+                      const weekScore = getWeeklyScore(selectedStudent.id, w, selectedBehaviorCourse);
+                      const count = getWeekRecordCount(selectedStudent.id, w, selectedBehaviorCourse);
                       const isActive = selectedBehaviorWeek === w;
                       return (
                         <button
@@ -622,18 +622,18 @@ const Students = () => {
                     <div className="bg-secondary/30 rounded-xl p-3">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-xs text-muted-foreground">Week {selectedBehaviorWeek} Score</p>
-                        <p className={`text-lg font-bold ${getScoreColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek))}`}>
-                          {getWeeklyScore(selectedStudent.id, selectedBehaviorWeek)}%
+                        <p className={`text-lg font-bold ${getScoreColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse))}`}>
+                          {getWeeklyScore(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse)}%
                         </p>
                       </div>
                       <div className="relative h-2 w-full rounded-full bg-secondary overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${getProgressColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek))}`}
-                          style={{ width: `${getWeeklyScore(selectedStudent.id, selectedBehaviorWeek)}%` }}
+                          className={`h-full rounded-full transition-all ${getProgressColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse))}`}
+                          style={{ width: `${getWeeklyScore(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse)}%` }}
                         />
                       </div>
                       <p className="text-[10px] text-muted-foreground mt-1">
-                        {getWeekRecordCount(selectedStudent.id, selectedBehaviorWeek)} record(s) this week
+                        {getWeekRecordCount(selectedStudent.id, selectedBehaviorWeek, selectedBehaviorCourse)} record(s) this week
                       </p>
                     </div>
                   )}
