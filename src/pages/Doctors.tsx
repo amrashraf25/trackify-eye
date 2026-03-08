@@ -17,6 +17,9 @@ const Doctors = () => {
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedCourseToAssign, setSelectedCourseToAssign] = useState("");
+  const [addDoctorOpen, setAddDoctorOpen] = useState(false);
+  const [newDoctor, setNewDoctor] = useState({ full_name: "", email: "", password: "" });
+  const [addingDoctor, setAddingDoctor] = useState(false);
   const { role } = useAuth();
   const queryClient = useQueryClient();
   const canManage = role === "admin" || role === "dean";
@@ -76,13 +79,70 @@ const Doctors = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const handleAddDoctor = async () => {
+    if (!newDoctor.full_name || !newDoctor.email || !newDoctor.password) {
+      toast.error("All fields are required");
+      return;
+    }
+    if (newDoctor.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    setAddingDoctor(true);
+    try {
+      const response = await supabase.functions.invoke("create-doctor", {
+        body: { full_name: newDoctor.full_name, email: newDoctor.email, password: newDoctor.password },
+      });
+      if (response.error) throw new Error(response.error.message || "Failed to create doctor");
+      const result = response.data;
+      if (result?.error) throw new Error(result.error);
+      toast.success("Doctor account created successfully");
+      setNewDoctor({ full_name: "", email: "", password: "" });
+      setAddDoctorOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["doctors-profiles"] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create doctor");
+    } finally {
+      setAddingDoctor(false);
+    }
+  };
+
   return (
     <MainLayout title="Doctors">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-card rounded-xl border border-border p-5">
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search doctors..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+          <div className="flex items-center gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Search doctors..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+            </div>
+            {canManage && (
+              <Dialog open={addDoctorOpen} onOpenChange={setAddDoctorOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm"><Plus className="w-4 h-4" /></Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Add New Doctor</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Full Name</Label>
+                      <Input placeholder="Dr. John Doe" value={newDoctor.full_name} onChange={(e) => setNewDoctor({ ...newDoctor, full_name: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Email</Label>
+                      <Input type="email" placeholder="doctor@institution.edu" value={newDoctor.email} onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label>Password</Label>
+                      <Input type="password" placeholder="Min 6 characters" value={newDoctor.password} onChange={(e) => setNewDoctor({ ...newDoctor, password: e.target.value })} />
+                    </div>
+                    <Button onClick={handleAddDoctor} disabled={addingDoctor} className="w-full">
+                      {addingDoctor ? "Creating..." : "Create Doctor Account"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
 
           {filteredDoctors.length === 0 ? (
