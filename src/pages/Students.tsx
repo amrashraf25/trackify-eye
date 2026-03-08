@@ -2,7 +2,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2 } from "lucide-react";
+import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Users } from "lucide-react";
 import { motion } from "framer-motion";
+
+const WEEKS = Array.from({ length: 16 }, (_, i) => i + 1);
 
 const Students = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,6 +30,7 @@ const Students = () => {
   });
   const { role } = useAuth();
   const queryClient = useQueryClient();
+  const [selectedBehaviorWeek, setSelectedBehaviorWeek] = useState<number | "all">("all");
 
   const { data: students = [], refetch } = useQuery({
     queryKey: ["students"],
@@ -65,6 +68,15 @@ const Students = () => {
     },
   });
 
+  const { data: behaviorRecords = [] } = useQuery({
+    queryKey: ["student-behavior-records"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("behavior_records").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const filteredStudents = students.filter((s) =>
     s.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.student_code.toLowerCase().includes(searchQuery.toLowerCase())
@@ -77,12 +89,33 @@ const Students = () => {
     return courses.filter((c) => courseIds.includes(c.id));
   };
 
-  const getScore = (studentId: string) => behaviorScores.find((s) => s.student_id === studentId)?.score ?? 100;
+  const getOverallScore = (studentId: string) => behaviorScores.find((s) => s.student_id === studentId)?.score ?? 100;
+
+  const getWeeklyScore = (studentId: string, week: number) => {
+    const records = behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week);
+    if (records.length === 0) return 100;
+    const total = records.reduce((sum, r) => sum + r.score_change, 0);
+    return Math.max(0, Math.min(100, 100 + total));
+  };
+
+  const getWeekRecordCount = (studentId: string, week: number) =>
+    behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week).length;
+
+  const getDisplayScore = (studentId: string) => {
+    if (selectedBehaviorWeek === "all") return getOverallScore(studentId);
+    return getWeeklyScore(studentId, selectedBehaviorWeek);
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-500";
     if (score >= 60) return "text-amber-500";
     return "text-destructive";
+  };
+
+  const getProgressColor = (score: number) => {
+    if (score >= 80) return "bg-emerald-500";
+    if (score >= 60) return "bg-amber-500";
+    return "bg-destructive";
   };
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -260,7 +293,7 @@ const Students = () => {
             <div className="space-y-2">
               {filteredStudents.map((student, index) => {
                 const studentCourses = getStudentCourses(student.id);
-                const score = getScore(student.id);
+                const score = getOverallScore(student.id);
                 return (
                   <motion.div
                     key={student.id}
@@ -355,9 +388,65 @@ const Students = () => {
                     <p className="text-xl font-bold text-foreground">{selectedStudent.year_level}</p>
                   </div>
                   <div className="bg-secondary/30 rounded-xl p-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Behavior</p>
-                    <p className={`text-xl font-bold ${getScoreColor(getScore(selectedStudent.id))}`}>{getScore(selectedStudent.id)}%</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Overall Behavior</p>
+                    <p className={`text-xl font-bold ${getScoreColor(getOverallScore(selectedStudent.id))}`}>{getOverallScore(selectedStudent.id)}%</p>
                   </div>
+                </div>
+
+                {/* 16-Week Behavior Breakdown */}
+                <div className="mt-4">
+                  <h4 className="font-bold text-foreground flex items-center gap-2 text-xs mb-3">
+                    <Calendar className="w-3.5 h-3.5 text-primary" />
+                    Weekly Behavior Score
+                  </h4>
+                  <div className="grid grid-cols-8 gap-1.5 mb-3">
+                    {WEEKS.map((w) => {
+                      const weekScore = getWeeklyScore(selectedStudent.id, w);
+                      const count = getWeekRecordCount(selectedStudent.id, w);
+                      const isActive = selectedBehaviorWeek === w;
+                      return (
+                        <button
+                          key={w}
+                          onClick={() => setSelectedBehaviorWeek(isActive ? "all" : w)}
+                          className={`relative p-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-glow-primary"
+                              : count > 0
+                              ? weekScore >= 80
+                                ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                                : weekScore >= 60
+                                ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
+                                : "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                              : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                          }`}
+                        >
+                          W{w}
+                          {count > 0 && !isActive && (
+                            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedBehaviorWeek !== "all" && (
+                    <div className="bg-secondary/30 rounded-xl p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-muted-foreground">Week {selectedBehaviorWeek} Score</p>
+                        <p className={`text-lg font-bold ${getScoreColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek))}`}>
+                          {getWeeklyScore(selectedStudent.id, selectedBehaviorWeek)}%
+                        </p>
+                      </div>
+                      <div className="relative h-2 w-full rounded-full bg-secondary overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${getProgressColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek))}`}
+                          style={{ width: `${getWeeklyScore(selectedStudent.id, selectedBehaviorWeek)}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {getWeekRecordCount(selectedStudent.id, selectedBehaviorWeek)} record(s) this week
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {selectedStudent.email && (
