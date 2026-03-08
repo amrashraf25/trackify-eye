@@ -2,7 +2,7 @@ import { BookOpen, Users, Stethoscope, AlertTriangle, Video, Settings, LayoutDas
 import { Button } from "./ui/button";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth, AppRole } from "@/hooks/useAuth";
-import trackifyLogo from "@/assets/trackify_logo.jfif";
+import owlMascot from "@/assets/owl_mascot.png";
 import { motion } from "framer-motion";
 
 interface NavItem {
