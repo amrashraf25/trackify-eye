@@ -388,9 +388,65 @@ const Students = () => {
                     <p className="text-xl font-bold text-foreground">{selectedStudent.year_level}</p>
                   </div>
                   <div className="bg-secondary/30 rounded-xl p-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Behavior</p>
-                    <p className={`text-xl font-bold ${getScoreColor(getScore(selectedStudent.id))}`}>{getScore(selectedStudent.id)}%</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Overall Behavior</p>
+                    <p className={`text-xl font-bold ${getScoreColor(getOverallScore(selectedStudent.id))}`}>{getOverallScore(selectedStudent.id)}%</p>
                   </div>
+                </div>
+
+                {/* 16-Week Behavior Breakdown */}
+                <div className="mt-4">
+                  <h4 className="font-bold text-foreground flex items-center gap-2 text-xs mb-3">
+                    <Calendar className="w-3.5 h-3.5 text-primary" />
+                    Weekly Behavior Score
+                  </h4>
+                  <div className="grid grid-cols-8 gap-1.5 mb-3">
+                    {WEEKS.map((w) => {
+                      const weekScore = getWeeklyScore(selectedStudent.id, w);
+                      const count = getWeekRecordCount(selectedStudent.id, w);
+                      const isActive = selectedBehaviorWeek === w;
+                      return (
+                        <button
+                          key={w}
+                          onClick={() => setSelectedBehaviorWeek(isActive ? "all" : w)}
+                          className={`relative p-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-glow-primary"
+                              : count > 0
+                              ? weekScore >= 80
+                                ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20"
+                                : weekScore >= 60
+                                ? "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20"
+                                : "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                              : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                          }`}
+                        >
+                          W{w}
+                          {count > 0 && !isActive && (
+                            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selectedBehaviorWeek !== "all" && (
+                    <div className="bg-secondary/30 rounded-xl p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-muted-foreground">Week {selectedBehaviorWeek} Score</p>
+                        <p className={`text-lg font-bold ${getScoreColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek))}`}>
+                          {getWeeklyScore(selectedStudent.id, selectedBehaviorWeek)}%
+                        </p>
+                      </div>
+                      <div className="relative h-2 w-full rounded-full bg-secondary overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${getProgressColor(getWeeklyScore(selectedStudent.id, selectedBehaviorWeek))}`}
+                          style={{ width: `${getWeeklyScore(selectedStudent.id, selectedBehaviorWeek)}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {getWeekRecordCount(selectedStudent.id, selectedBehaviorWeek)} record(s) this week
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {selectedStudent.email && (
