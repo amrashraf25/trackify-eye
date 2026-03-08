@@ -5,6 +5,7 @@ import { ClipboardCheck, UserCheck, UserX, Clock, BookOpen, RotateCcw } from "lu
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import SendDoctorAttendanceAlert from "./SendDoctorAttendanceAlert";
 
 const WEEKS = Array.from({ length: 16 }, (_, i) => i + 1);
@@ -66,6 +67,11 @@ const DoctorAttendanceSection = ({ doctorId, doctorName, doctorCourses, userId }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["doctor-attendance-records", doctorId] });
+      toast.success("Attendance updated");
+    },
+    onError: (err: any) => {
+      console.error("Attendance error:", err);
+      toast.error(err.message || "Failed to update attendance");
     },
   });
 
