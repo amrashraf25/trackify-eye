@@ -486,6 +486,7 @@ const Students = () => {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    </div>
                   )}
                 </div>
 
