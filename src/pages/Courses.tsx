@@ -59,11 +59,34 @@ const Courses = () => {
   const canManage = role === "admin" || role === "dean";
   const canRecord = role === "admin" || role === "dean" || role === "doctor";
 
-  const { data: courses = [], refetch } = useQuery({
-    queryKey: ["courses", role, user?.id],
+  // For students, first get their student record
+  const { data: myStudentRecord } = useQuery({
+    queryKey: ["my-student-record", user?.id],
     queryFn: async () => {
+      const { data, error } = await supabase.from("students").select("id").eq("user_id", user?.id).single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user?.id && role === "student",
+  });
+
+  const { data: courses = [], refetch } = useQuery({
+    queryKey: ["courses", role, user?.id, myStudentRecord?.id],
+    queryFn: async () => {
+      if (role === "student" && myStudentRecord?.id) {
+        // Get enrolled course IDs first
+        const { data: myEnrollments, error: enrollError } = await supabase
+          .from("enrollments")
+          .select("course_id")
+          .eq("student_id", myStudentRecord.id);
+        if (enrollError) throw enrollError;
+        const courseIds = myEnrollments.map((e) => e.course_id);
+        if (courseIds.length === 0) return [];
+        const { data, error } = await supabase.from("courses").select("*").in("id", courseIds).order("name");
+        if (error) throw error;
+        return data;
+      }
       let query = supabase.from("courses").select("*").order("name");
-      // Doctors can only see courses assigned to them
       if (role === "doctor" && user?.id) {
         query = query.eq("doctor_id", user.id);
       }
@@ -71,6 +94,7 @@ const Courses = () => {
       if (error) throw error;
       return data;
     },
+    enabled: role !== "student" || !!myStudentRecord?.id,
   });
 
   const { data: enrollments = [] } = useQuery({
