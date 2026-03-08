@@ -299,6 +299,7 @@ const Behavior = () => {
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
                       <div>
                         <Label>Notes (optional)</Label>
                         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add notes..." />
