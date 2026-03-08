@@ -561,6 +561,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_student_in_doctor_courses: {
+        Args: { _doctor_id: string; _student_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "dean" | "doctor" | "student"
