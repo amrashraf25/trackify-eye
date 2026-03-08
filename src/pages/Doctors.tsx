@@ -109,6 +109,23 @@ const Doctors = () => {
     }
   };
 
+  const deleteDoctor = useMutation({
+    mutationFn: async (doctorId: string) => {
+      // Unassign courses first
+      await supabase.from("courses").update({ doctor_id: null }).eq("doctor_id", doctorId);
+      // Delete profile
+      const { error } = await supabase.from("profiles").delete().eq("id", doctorId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["doctors-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["doctor-courses"] });
+      toast.success("Doctor deleted successfully");
+      setSelectedDoctorId(null);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <MainLayout title="Doctors">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
