@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MetricCard from "@/components/dashboard/MetricCard";
-import { BookOpen, Users, ClipboardCheck, AlertTriangle, GraduationCap, ArrowRight } from "lucide-react";
+import { BookOpen, Users, ClipboardCheck, AlertTriangle, GraduationCap, ArrowRight, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import SendBehaviorAlert from "@/components/SendBehaviorAlert";
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
