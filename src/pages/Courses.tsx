@@ -370,9 +370,34 @@ const Courses = () => {
                   <span>{selectedCourse.semester}</span>
                 </p>
               </div>
-              <Badge className="bg-primary/10 text-primary border border-primary/20 text-sm px-3 py-1 shrink-0">
-                <Users className="w-3.5 h-3.5 mr-1.5" />{enrolledStudents.length} Students
-              </Badge>
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge className="bg-primary/10 text-primary border border-primary/20 text-sm px-3 py-1">
+                  <Users className="w-3.5 h-3.5 mr-1.5" />{enrolledStudents.length} Students
+                </Badge>
+                {canManage && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="icon" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Course</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete <strong>{selectedCourse.name}</strong>? This will also remove all enrollments, attendance records, and behavior records for this course. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteCourse.mutate(selectedCourse.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </div>
           </motion.div>
 
