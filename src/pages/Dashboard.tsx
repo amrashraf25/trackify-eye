@@ -420,6 +420,7 @@ const Dashboard = () => {
 
   if (role === "student") return <StudentDashboard />;
   if (role === "doctor") return <DoctorDashboard />;
+  if (role === "dean") return <DeanDashboard />;
   return <AdminDashboard />;
 };
 
