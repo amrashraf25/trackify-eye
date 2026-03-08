@@ -2,7 +2,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2, Calendar, ChevronLeft, ChevronRight, XCircle, UserPlus } from "lucide-react";
+import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2, Calendar, ChevronLeft, ChevronRight, XCircle, UserPlus, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,13 @@ const Students = () => {
   const { role } = useAuth();
   const queryClient = useQueryClient();
   const [selectedBehaviorWeek, setSelectedBehaviorWeek] = useState<number | "all">("all");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editData, setEditData] = useState({
+    full_name: "", student_code: "", email: "", phone: "", year_level: "1", status: "active"
+  });
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [editAvatarFile, setEditAvatarFile] = useState<File | null>(null);
+  const [editAvatarPreview, setEditAvatarPreview] = useState<string | null>(null);
 
   const { data: students = [], refetch } = useQuery({
     queryKey: ["students"],
@@ -241,6 +248,66 @@ const Students = () => {
     return courses.filter((c) => !enrolledCourseIds.includes(c.id));
   };
 
+  const openEditDialog = (student: any) => {
+    setEditData({
+      full_name: student.full_name,
+      student_code: student.student_code,
+      email: student.email || "",
+      phone: student.phone || "",
+      year_level: String(student.year_level),
+      status: student.status,
+    });
+    setEditAvatarFile(null);
+    setEditAvatarPreview(student.avatar_url || null);
+    setEditOpen(true);
+  };
+
+  const handleEditAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { toast.error("Image must be less than 5MB"); return; }
+      setEditAvatarFile(file);
+      setEditAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const updateStudent = useMutation({
+    mutationFn: async () => {
+      if (!selectedStudent) return;
+      if (!editData.full_name.trim() || !editData.student_code.trim()) {
+        throw new Error("Name and student code are required");
+      }
+
+      let avatar_url = selectedStudent.avatar_url;
+      if (editAvatarFile) {
+        const ext = editAvatarFile.name.split(".").pop();
+        const fileName = `${editData.student_code}_${Date.now()}.${ext}`;
+        const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, editAvatarFile, { upsert: true });
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+        avatar_url = urlData.publicUrl;
+      }
+
+      const { error } = await supabase.from("students").update({
+        full_name: editData.full_name.trim(),
+        student_code: editData.student_code.trim(),
+        email: editData.email.trim() || null,
+        phone: editData.phone.trim() || null,
+        year_level: parseInt(editData.year_level),
+        status: editData.status,
+        avatar_url,
+      }).eq("id", selectedStudent.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast.success("Student updated successfully");
+      setEditOpen(false);
+      refetch();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <MainLayout title="Students">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -394,6 +461,10 @@ const Students = () => {
                     </Badge>
                   </div>
                   {canManage && (
+                    <div className="flex gap-1.5 shrink-0">
+                    <Button variant="outline" size="icon" className="rounded-xl border-border/50 hover:border-primary/40 hover:bg-primary/10" onClick={() => openEditDialog(selectedStudent)}>
+                      <Pencil className="w-4 h-4 text-primary" />
+                    </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="icon" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0">
@@ -415,6 +486,7 @@ const Students = () => {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    </div>
                   )}
                 </div>
 
@@ -580,6 +652,70 @@ const Students = () => {
                   )}
                 </div>
               </motion.div>
+
+              {/* Edit Student Dialog */}
+              <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                <DialogContent className="glass max-h-[90vh] overflow-y-auto">
+                  <DialogHeader><DialogTitle>Edit Student</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex flex-col items-center gap-3">
+                      <div
+                        onClick={() => editFileInputRef.current?.click()}
+                        className="w-24 h-24 rounded-2xl bg-secondary/50 border-2 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden"
+                      >
+                        {editAvatarPreview ? (
+                          <img src={editAvatarPreview} alt="Preview" className="w-full h-full object-cover rounded-2xl" />
+                        ) : (
+                          <div className="text-center">
+                            <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
+                            <span className="text-[10px] text-muted-foreground">Photo</span>
+                          </div>
+                        )}
+                      </div>
+                      <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleEditAvatarSelect} className="hidden" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><User className="w-3 h-3" />Full Name *</Label>
+                      <Input value={editData.full_name} onChange={(e) => setEditData({ ...editData, full_name: e.target.value })} className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Hash className="w-3 h-3" />Student Code *</Label>
+                      <Input value={editData.student_code} onChange={(e) => setEditData({ ...editData, student_code: e.target.value })} className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Mail className="w-3 h-3" />Email</Label>
+                      <Input type="email" value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Phone className="w-3 h-3" />Phone</Label>
+                      <Input value={editData.phone} onChange={(e) => setEditData({ ...editData, phone: e.target.value })} className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Year Level</Label>
+                      <Select value={editData.year_level} onValueChange={(v) => setEditData({ ...editData, year_level: v })}>
+                        <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map((y) => <SelectItem key={y} value={String(y)}>Year {y}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Status</Label>
+                      <Select value={editData.status} onValueChange={(v) => setEditData({ ...editData, status: v })}>
+                        <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button onClick={() => updateStudent.mutate()} disabled={updateStudent.isPending} className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                      {updateStudent.isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </>
           ) : (
             <div className="glass rounded-2xl p-5 text-center text-muted-foreground">
