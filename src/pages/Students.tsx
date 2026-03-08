@@ -652,6 +652,70 @@ const Students = () => {
                   )}
                 </div>
               </motion.div>
+
+              {/* Edit Student Dialog */}
+              <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                <DialogContent className="glass max-h-[90vh] overflow-y-auto">
+                  <DialogHeader><DialogTitle>Edit Student</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
+                    <div className="flex flex-col items-center gap-3">
+                      <div
+                        onClick={() => editFileInputRef.current?.click()}
+                        className="w-24 h-24 rounded-2xl bg-secondary/50 border-2 border-dashed border-border/50 flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden"
+                      >
+                        {editAvatarPreview ? (
+                          <img src={editAvatarPreview} alt="Preview" className="w-full h-full object-cover rounded-2xl" />
+                        ) : (
+                          <div className="text-center">
+                            <Upload className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
+                            <span className="text-[10px] text-muted-foreground">Photo</span>
+                          </div>
+                        )}
+                      </div>
+                      <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleEditAvatarSelect} className="hidden" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><User className="w-3 h-3" />Full Name *</Label>
+                      <Input value={editData.full_name} onChange={(e) => setEditData({ ...editData, full_name: e.target.value })} className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Hash className="w-3 h-3" />Student Code *</Label>
+                      <Input value={editData.student_code} onChange={(e) => setEditData({ ...editData, student_code: e.target.value })} className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Mail className="w-3 h-3" />Email</Label>
+                      <Input type="email" value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value })} className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="flex items-center gap-2 text-xs"><Phone className="w-3 h-3" />Phone</Label>
+                      <Input value={editData.phone} onChange={(e) => setEditData({ ...editData, phone: e.target.value })} className="rounded-xl mt-1" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Year Level</Label>
+                      <Select value={editData.year_level} onValueChange={(v) => setEditData({ ...editData, year_level: v })}>
+                        <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5].map((y) => <SelectItem key={y} value={String(y)}>Year {y}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Status</Label>
+                      <Select value={editData.status} onValueChange={(v) => setEditData({ ...editData, status: v })}>
+                        <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button onClick={() => updateStudent.mutate()} disabled={updateStudent.isPending} className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                      {updateStudent.isPending ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </>
           ) : (
             <div className="glass rounded-2xl p-5 text-center text-muted-foreground">
