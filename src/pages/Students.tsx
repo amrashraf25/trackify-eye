@@ -68,6 +68,15 @@ const Students = () => {
     },
   });
 
+  const { data: behaviorRecords = [] } = useQuery({
+    queryKey: ["student-behavior-records"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("behavior_records").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const filteredStudents = students.filter((s) =>
     s.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.student_code.toLowerCase().includes(searchQuery.toLowerCase())
@@ -80,12 +89,33 @@ const Students = () => {
     return courses.filter((c) => courseIds.includes(c.id));
   };
 
-  const getScore = (studentId: string) => behaviorScores.find((s) => s.student_id === studentId)?.score ?? 100;
+  const getOverallScore = (studentId: string) => behaviorScores.find((s) => s.student_id === studentId)?.score ?? 100;
+
+  const getWeeklyScore = (studentId: string, week: number) => {
+    const records = behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week);
+    if (records.length === 0) return 100;
+    const total = records.reduce((sum, r) => sum + r.score_change, 0);
+    return Math.max(0, Math.min(100, 100 + total));
+  };
+
+  const getWeekRecordCount = (studentId: string, week: number) =>
+    behaviorRecords.filter((r) => r.student_id === studentId && r.week_number === week).length;
+
+  const getDisplayScore = (studentId: string) => {
+    if (selectedBehaviorWeek === "all") return getOverallScore(studentId);
+    return getWeeklyScore(studentId, selectedBehaviorWeek);
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-500";
     if (score >= 60) return "text-amber-500";
     return "text-destructive";
+  };
+
+  const getProgressColor = (score: number) => {
+    if (score >= 80) return "bg-emerald-500";
+    if (score >= 60) return "bg-amber-500";
+    return "bg-destructive";
   };
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
