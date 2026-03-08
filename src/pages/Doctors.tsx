@@ -148,6 +148,7 @@ const Doctors = () => {
                     doctorId={selectedDoctor.id}
                     doctorName={selectedDoctor.full_name || "Doctor"}
                     userId={user?.id}
+                    doctorCourses={getDoctorCourses(selectedDoctor.id)}
                   />
                 </>
               )}

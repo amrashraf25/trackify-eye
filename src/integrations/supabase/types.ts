@@ -266,6 +266,7 @@ export type Database = {
         Row: {
           action_name: string
           action_type: string
+          course_id: string | null
           created_at: string
           doctor_id: string
           id: string
@@ -277,6 +278,7 @@ export type Database = {
         Insert: {
           action_name: string
           action_type: string
+          course_id?: string | null
           created_at?: string
           doctor_id: string
           id?: string
@@ -288,6 +290,7 @@ export type Database = {
         Update: {
           action_name?: string
           action_type?: string
+          course_id?: string | null
           created_at?: string
           doctor_id?: string
           id?: string
@@ -296,7 +299,15 @@ export type Database = {
           score_change?: number
           week_number?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "doctor_behavior_records_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       doctor_behavior_scores: {
         Row: {
