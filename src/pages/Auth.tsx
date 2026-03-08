@@ -96,6 +96,7 @@ const Auth = () => {
     "idle" | "hold" | "flying" | "reveal"
   >("idle");
   const isTransitioning = useRef(false);
+  const [errorFlash, setErrorFlash] = useState(false);
 
   // Synthesize a whoosh sound using Web Audio API
   const playWhoosh = () => {
