@@ -461,6 +461,10 @@ const Students = () => {
                     </Badge>
                   </div>
                   {canManage && (
+                    <div className="flex gap-1.5 shrink-0">
+                    <Button variant="outline" size="icon" className="rounded-xl border-border/50 hover:border-primary/40 hover:bg-primary/10" onClick={() => openEditDialog(selectedStudent)}>
+                      <Pencil className="w-4 h-4 text-primary" />
+                    </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" size="icon" className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0">
