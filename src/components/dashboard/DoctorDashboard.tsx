@@ -74,6 +74,18 @@ const DoctorDashboard = () => {
     },
   });
 
+  // Get behavior scores for doctor's students
+  const { data: behaviorScores = [] } = useQuery({
+    queryKey: ["doctor-behavior-scores", courseIds],
+    queryFn: async () => {
+      if (courseIds.length === 0) return [];
+      const { data, error } = await supabase.from("behavior_scores").select("*");
+      if (error) return [];
+      return data;
+    },
+    enabled: courseIds.length > 0,
+  });
+
   // Deduplicate students
   const uniqueStudents = Array.from(
     new Map(
