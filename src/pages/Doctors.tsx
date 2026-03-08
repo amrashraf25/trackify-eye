@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { motion } from "framer-motion";
 
 const Doctors = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -110,33 +111,24 @@ const Doctors = () => {
   return (
     <MainLayout title="Doctors">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-card rounded-xl border border-border p-5">
+        <div className="glass rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Search doctors..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
+              <Input placeholder="Search doctors..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 rounded-xl bg-secondary/50 border-border/50" />
             </div>
             {canManage && (
               <Dialog open={addDoctorOpen} onOpenChange={setAddDoctorOpen}>
                 <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="w-4 h-4" /></Button>
+                  <Button size="sm" className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"><Plus className="w-4 h-4" /></Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="glass">
                   <DialogHeader><DialogTitle>Add New Doctor</DialogTitle></DialogHeader>
                   <div className="space-y-4">
-                    <div>
-                      <Label>Full Name</Label>
-                      <Input placeholder="Dr. John Doe" value={newDoctor.full_name} onChange={(e) => setNewDoctor({ ...newDoctor, full_name: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label>Email</Label>
-                      <Input type="email" placeholder="doctor@institution.edu" value={newDoctor.email} onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })} />
-                    </div>
-                    <div>
-                      <Label>Password</Label>
-                      <Input type="password" placeholder="Min 6 characters" value={newDoctor.password} onChange={(e) => setNewDoctor({ ...newDoctor, password: e.target.value })} />
-                    </div>
-                    <Button onClick={handleAddDoctor} disabled={addingDoctor} className="w-full">
+                    <div><Label>Full Name</Label><Input placeholder="Dr. John Doe" value={newDoctor.full_name} onChange={(e) => setNewDoctor({ ...newDoctor, full_name: e.target.value })} className="rounded-xl" /></div>
+                    <div><Label>Email</Label><Input type="email" placeholder="doctor@institution.edu" value={newDoctor.email} onChange={(e) => setNewDoctor({ ...newDoctor, email: e.target.value })} className="rounded-xl" /></div>
+                    <div><Label>Password</Label><Input type="password" placeholder="Min 6 characters" value={newDoctor.password} onChange={(e) => setNewDoctor({ ...newDoctor, password: e.target.value })} className="rounded-xl" /></div>
+                    <Button onClick={handleAddDoctor} disabled={addingDoctor} className="w-full rounded-xl bg-gradient-to-r from-primary to-accent">
                       {addingDoctor ? "Creating..." : "Create Doctor Account"}
                     </Button>
                   </div>
@@ -151,31 +143,34 @@ const Doctors = () => {
               <p>No doctors found</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredDoctors.map((doctor) => (
-                <div
+            <div className="space-y-2">
+              {filteredDoctors.map((doctor, index) => (
+                <motion.div
                   key={doctor.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
                   onClick={() => setSelectedDoctorId(doctor.id)}
-                  className={`p-4 rounded-lg cursor-pointer transition-all ${
+                  className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                     selectedDoctor?.id === doctor.id
-                      ? "bg-primary/10 border border-primary/30"
-                      : "bg-secondary/50 hover:bg-secondary border border-transparent"
+                      ? "bg-primary/10 ring-1 ring-primary/30"
+                      : "bg-secondary/30 hover:bg-secondary/50"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
                       {doctor.avatar_url ? (
-                        <img src={doctor.avatar_url} alt={doctor.full_name || ""} className="w-full h-full rounded-full object-cover" />
+                        <img src={doctor.avatar_url} alt={doctor.full_name || ""} className="w-full h-full rounded-xl object-cover" />
                       ) : (
                         <User className="w-5 h-5 text-primary" />
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{doctor.full_name || "Unnamed"}</p>
-                      <p className="text-xs text-muted-foreground">{doctor.email} • {getDoctorCourses(doctor.id).length} courses</p>
+                      <p className="font-semibold text-foreground text-sm">{doctor.full_name || "Unnamed"}</p>
+                      <p className="text-[10px] text-muted-foreground">{doctor.email} • {getDoctorCourses(doctor.id).length} courses</p>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
@@ -184,55 +179,55 @@ const Doctors = () => {
         <div className="lg:col-span-2 space-y-6">
           {selectedDoctor ? (
             <>
-              <div className="bg-card rounded-xl border border-border p-6">
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass rounded-2xl p-6">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center overflow-hidden ring-2 ring-primary/20">
                     {selectedDoctor.avatar_url ? (
-                      <img src={selectedDoctor.avatar_url} alt={selectedDoctor.full_name || ""} className="w-full h-full rounded-full object-cover" />
+                      <img src={selectedDoctor.avatar_url} alt={selectedDoctor.full_name || ""} className="w-full h-full rounded-2xl object-cover" />
                     ) : (
                       <User className="w-8 h-8 text-primary" />
                     )}
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-foreground">{selectedDoctor.full_name}</h3>
-                    <p className="text-sm text-muted-foreground">{selectedDoctor.email}</p>
-                    <Badge className="mt-1 capitalize">{selectedDoctor.role}</Badge>
+                    <h3 className="text-xl font-bold text-foreground">{selectedDoctor.full_name}</h3>
+                    <p className="text-xs text-muted-foreground font-mono">{selectedDoctor.email}</p>
+                    <Badge className="mt-1 capitalize text-[10px] bg-primary/10 text-primary">{selectedDoctor.role}</Badge>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-secondary/50 rounded-lg p-4">
+                  <div className="bg-secondary/30 rounded-xl p-4">
                     <div className="flex items-center gap-2 text-muted-foreground mb-2">
                       <BookOpen className="w-4 h-4" />
-                      <span className="text-xs">Assigned Courses</span>
+                      <span className="text-[10px] uppercase tracking-wider">Assigned Courses</span>
                     </div>
-                    <p className="text-2xl font-semibold text-foreground">{getDoctorCourses(selectedDoctor.id).length}</p>
+                    <p className="text-2xl font-bold text-foreground">{getDoctorCourses(selectedDoctor.id).length}</p>
                   </div>
-                  <div className="bg-secondary/50 rounded-lg p-4">
+                  <div className="bg-secondary/30 rounded-xl p-4">
                     <div className="flex items-center gap-2 text-muted-foreground mb-2">
                       <Users className="w-4 h-4" />
-                      <span className="text-xs">Role</span>
+                      <span className="text-[10px] uppercase tracking-wider">Role</span>
                     </div>
-                    <p className="text-lg font-semibold text-foreground capitalize">{selectedDoctor.role}</p>
+                    <p className="text-lg font-bold text-foreground capitalize">{selectedDoctor.role}</p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="bg-card rounded-xl border border-border p-6">
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="glass rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">Assigned Courses</h3>
+                  <h3 className="text-base font-bold text-foreground">Assigned Courses</h3>
                   {canManage && (
                     <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
                       <DialogTrigger asChild>
-                        <Button size="sm"><Link2 className="w-4 h-4 mr-2" />Assign Course</Button>
+                        <Button size="sm" className="rounded-xl"><Link2 className="w-4 h-4 mr-2" />Assign Course</Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="glass">
                         <DialogHeader><DialogTitle>Assign Course to {selectedDoctor.full_name}</DialogTitle></DialogHeader>
                         <div className="space-y-4">
                           <div>
                             <Label>Select Course</Label>
                             <Select value={selectedCourseToAssign} onValueChange={setSelectedCourseToAssign}>
-                              <SelectTrigger><SelectValue placeholder="Choose a course..." /></SelectTrigger>
+                              <SelectTrigger className="rounded-xl"><SelectValue placeholder="Choose a course..." /></SelectTrigger>
                               <SelectContent>
                                 {getUnassignedCourses().map((c) => (
                                   <SelectItem key={c.id} value={c.id}>{c.name} ({c.course_code})</SelectItem>
@@ -240,27 +235,25 @@ const Doctors = () => {
                               </SelectContent>
                             </Select>
                           </div>
-                          <Button onClick={() => assignCourse.mutate()} disabled={!selectedCourseToAssign} className="w-full">
-                            Assign
-                          </Button>
+                          <Button onClick={() => assignCourse.mutate()} disabled={!selectedCourseToAssign} className="w-full rounded-xl">Assign</Button>
                         </div>
                       </DialogContent>
                     </Dialog>
                   )}
                 </div>
                 {getDoctorCourses(selectedDoctor.id).length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {getDoctorCourses(selectedDoctor.id).map((course) => (
-                      <div key={course.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+                      <div key={course.id} className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl hover:bg-secondary/50 transition-colors">
                         <div className="flex items-center gap-3">
                           <BookOpen className="w-5 h-5 text-primary" />
                           <div>
-                            <p className="font-medium text-foreground">{course.name}</p>
-                            <p className="text-xs text-muted-foreground">{course.course_code} • {course.credits} credits • {course.semester}</p>
+                            <p className="font-medium text-foreground text-sm">{course.name}</p>
+                            <p className="text-[10px] text-muted-foreground font-mono">{course.course_code} • {course.credits} credits • {course.semester}</p>
                           </div>
                         </div>
                         {canManage && (
-                          <Button size="sm" variant="ghost" className="text-destructive text-xs h-7"
+                          <Button size="sm" variant="ghost" className="text-destructive text-xs h-7 rounded-lg hover:bg-destructive/10"
                             onClick={() => unassignCourse.mutate(course.id)}>
                             Remove
                           </Button>
@@ -271,10 +264,10 @@ const Doctors = () => {
                 ) : (
                   <p className="text-sm text-muted-foreground">No courses assigned</p>
                 )}
-              </div>
+              </motion.div>
             </>
           ) : (
-            <div className="bg-card rounded-xl border border-border p-6 text-center text-muted-foreground">
+            <div className="glass rounded-2xl p-6 text-center text-muted-foreground">
               Select a doctor to view details
             </div>
           )}

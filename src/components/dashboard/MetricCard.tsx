@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface MetricCardProps {
   title: string;
@@ -9,33 +10,57 @@ interface MetricCardProps {
     isPositive: boolean;
   };
   color?: "primary" | "success" | "warning" | "info";
+  index?: number;
 }
 
 const colorClasses = {
-  primary: "bg-primary/10 text-primary",
-  success: "bg-emerald-500/10 text-emerald-500",
-  warning: "bg-amber-500/10 text-amber-500",
-  info: "bg-sky-500/10 text-sky-500",
+  primary: {
+    icon: "bg-primary/15 text-primary",
+    glow: "hover:shadow-glow-primary",
+    border: "hover:border-primary/30",
+  },
+  success: {
+    icon: "bg-emerald-500/15 text-emerald-500",
+    glow: "hover:shadow-[0_8px_30px_hsl(160_84%_39%/0.12)]",
+    border: "hover:border-emerald-500/30",
+  },
+  warning: {
+    icon: "bg-amber-500/15 text-amber-500",
+    glow: "hover:shadow-[0_8px_30px_hsl(38_92%_50%/0.12)]",
+    border: "hover:border-amber-500/30",
+  },
+  info: {
+    icon: "bg-neon-cyan/15 text-neon-cyan",
+    glow: "hover:shadow-glow-cyan",
+    border: "hover:border-neon-cyan/30",
+  },
 };
 
-const MetricCard = ({ title, value, icon: Icon, trend, color = "primary" }: MetricCardProps) => {
+const MetricCard = ({ title, value, icon: Icon, trend, color = "primary", index = 0 }: MetricCardProps) => {
+  const styles = colorClasses[color];
+  
   return (
-    <div className="bg-card rounded-xl p-5 border border-border hover:border-primary/30 transition-all duration-200">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1, duration: 0.4 }}
+      className={`glass rounded-2xl p-5 ${styles.border} ${styles.glow} transition-all duration-300 hover-lift cursor-default`}
+    >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm text-muted-foreground mb-1">{title}</p>
-          <p className="text-2xl font-semibold text-foreground">{value}</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{title}</p>
+          <p className="text-3xl font-bold text-foreground tracking-tight">{value}</p>
           {trend && (
-            <p className={`text-xs mt-2 ${trend.isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+            <p className={`text-xs mt-2 font-medium ${trend.isPositive ? 'text-emerald-500' : 'text-destructive'}`}>
               {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}% from last week
             </p>
           )}
         </div>
-        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${colorClasses[color]}`}>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${styles.icon}`}>
           <Icon className="w-6 h-6" />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

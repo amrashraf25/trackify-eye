@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { Play } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 interface IncidentRecord {
   id: string;
@@ -36,26 +37,14 @@ const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
     },
   });
 
-  // Real-time subscription
   useEffect(() => {
     const channel = supabase
       .channel("incidents-table")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "incidents",
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["incidents-table"] });
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "incidents" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["incidents-table"] });
+      })
       .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
   const filteredRecords = records.filter((record) =>
@@ -66,74 +55,77 @@ const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
   if (isLoading) {
     return (
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Data</h2>
-        <div className="h-64 bg-card/50 rounded-lg border border-border animate-pulse" />
+        <h2 className="text-base font-bold text-foreground mb-4">Data</h2>
+        <div className="h-64 glass rounded-xl animate-pulse" />
       </div>
     );
   }
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-foreground mb-4">Data</h2>
+      <h2 className="text-base font-bold text-foreground mb-4">Data</h2>
       
-      <div className="overflow-hidden rounded-lg border border-border">
+      <div className="overflow-hidden rounded-xl glass">
         <table className="w-full">
           <thead>
-            <tr className="bg-table-header">
-              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Video Clip</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Incident Type</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Room Number</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Date</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Actions</th>
+            <tr className="bg-table-header/50">
+              <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Video Clip</th>
+              <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Incident Type</th>
+              <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Room</th>
+              <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Date</th>
+              <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3 text-left text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredRecords.map((record, index) => (
-              <tr 
-                key={record.id} 
-                className="border-t border-border hover:bg-table-hover transition-colors duration-150 animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
+              <motion.tr 
+                key={record.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * 0.03 }}
+                className="border-t border-border/30 hover:bg-table-hover/50 transition-colors duration-150"
               >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <Play className="w-4 h-4 text-primary" />
-                    <span className="text-sm text-foreground">
+                    <Play className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-xs text-foreground font-mono">
                       {record.video_clip_url || `clip_${record.id.slice(0, 6)}.mp4`}
                     </span>
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary/20 text-primary border border-primary/30">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 text-primary neon-border">
                     {record.incident_type}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-sm text-foreground">Room {record.room_number}</td>
-                <td className="px-4 py-3 text-sm text-muted-foreground">
+                <td className="px-4 py-3 text-xs text-muted-foreground font-mono">
                   {format(new Date(record.detected_at), "yyyy-MM-dd HH:mm")}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                  <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold ${
                     record.status === "resolved" 
-                      ? "bg-green-500/20 text-green-400" 
+                      ? "bg-emerald-500/10 text-emerald-500" 
                       : record.status === "reviewing"
-                      ? "bg-yellow-500/20 text-yellow-400"
-                      : "bg-primary/20 text-primary"
+                      ? "bg-amber-500/10 text-amber-500"
+                      : "bg-primary/10 text-primary"
                   }`}>
                     {record.status}
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <Button variant="view" size="sm" onClick={() => navigate(`/incident/${record.id}`)}>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/incident/${record.id}`)}
+                    className="text-xs rounded-lg hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">
                     View
                   </Button>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
             
             {filteredRecords.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
                   No records found matching your search.
                 </td>
               </tr>

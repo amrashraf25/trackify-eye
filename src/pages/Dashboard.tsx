@@ -7,10 +7,10 @@ import AttendanceChart from "@/components/dashboard/AttendanceChart";
 import BehaviorPieChart from "@/components/dashboard/BehaviorPieChart";
 import GradesComposition from "@/components/dashboard/GradesComposition";
 import RecentCourses from "@/components/dashboard/RecentCourses";
-import { BookOpen, AlertTriangle, Users, TrendingUp, GraduationCap, ClipboardCheck, Activity, History, TrendingDown } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { BookOpen, AlertTriangle, Users, TrendingUp, GraduationCap, ClipboardCheck, Activity, History, TrendingDown, Brain, Scan, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 const StudentDashboard = () => {
   const { user } = useAuth();
@@ -100,11 +100,11 @@ const StudentDashboard = () => {
   if (!student) {
     return (
       <MainLayout title="My Dashboard">
-        <div className="text-center py-12">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
           <GraduationCap className="w-16 h-16 mx-auto mb-4 text-primary" />
-          <h2 className="text-2xl font-semibold text-foreground mb-2">Welcome, {user?.user_metadata?.full_name || "Student"}</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Welcome, {user?.user_metadata?.full_name || "Student"}</h2>
           <p className="text-muted-foreground">Your student profile is not linked yet. Please contact admin.</p>
-        </div>
+        </motion.div>
       </MainLayout>
     );
   }
@@ -114,51 +114,35 @@ const StudentDashboard = () => {
       <div className="space-y-6">
         {/* Metric cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-card rounded-xl border border-border p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/20"><Activity className="w-5 h-5 text-primary" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">Behavior Score</p>
-                <p className={`text-2xl font-bold ${getScoreColor(score)}`}>{score}%</p>
+          {[
+            { title: "Behavior Score", icon: Activity, value: `${score}%`, color: getScoreColor(score), extra: (
+              <div className="relative h-2 w-full rounded-full bg-secondary overflow-hidden mt-3">
+                <div className={`h-full rounded-full transition-all ${getProgressColor(score)}`} style={{ width: `${score}%` }} />
               </div>
-            </div>
-            <div className="relative h-2 w-full rounded-full bg-secondary overflow-hidden mt-3">
-              <div className={`h-full rounded-full transition-all ${getProgressColor(score)}`} style={{ width: `${score}%` }} />
-            </div>
-          </div>
-          <div className="bg-card rounded-xl border border-border p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/20"><ClipboardCheck className="w-5 h-5 text-emerald-500" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">Attendance Rate</p>
-                <p className="text-2xl font-bold text-foreground">{attendanceRate}%</p>
+            )},
+            { title: "Attendance Rate", icon: ClipboardCheck, value: `${attendanceRate}%`, color: "text-emerald-500" },
+            { title: "Enrolled Courses", icon: BookOpen, value: enrollments.length, color: "text-primary" },
+            { title: "Total Grades", icon: TrendingUp, value: grades.length, color: "text-amber-500" },
+          ].map((card, i) => (
+            <motion.div key={card.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
+              className="glass rounded-2xl p-5 hover-lift transition-all duration-300">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-primary/10"><card.icon className="w-5 h-5 text-primary" /></div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">{card.title}</p>
+                  <p className={`text-2xl font-bold ${card.color}`}>{card.value}</p>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="bg-card rounded-xl border border-border p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/20"><BookOpen className="w-5 h-5 text-primary" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">Enrolled Courses</p>
-                <p className="text-2xl font-bold text-foreground">{enrollments.length}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-card rounded-xl border border-border p-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/20"><TrendingUp className="w-5 h-5 text-amber-500" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Grades</p>
-                <p className="text-2xl font-bold text-foreground">{grades.length}</p>
-              </div>
-            </div>
-          </div>
+              {card.extra}
+            </motion.div>
+          ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Attendance */}
-          <div className="bg-card rounded-xl border border-border p-5">
-            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="glass rounded-2xl p-5">
+            <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
               <ClipboardCheck className="w-4 h-4 text-primary" />
               Recent Attendance
             </h3>
@@ -167,7 +151,7 @@ const StudentDashboard = () => {
                 <p className="text-sm text-muted-foreground">No attendance records yet</p>
               ) : (
                 attendance.slice(0, 15).map((record) => (
-                  <div key={record.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/30">
+                  <div key={record.id} className="flex items-center justify-between p-2.5 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors">
                     <div>
                       <p className="text-sm font-medium text-foreground">{record.course_name}</p>
                       <p className="text-xs text-muted-foreground">{format(new Date(record.date), "MMM dd, yyyy")}</p>
@@ -183,11 +167,12 @@ const StudentDashboard = () => {
                 ))
               )}
             </div>
-          </div>
+          </motion.div>
 
           {/* Behavior History */}
-          <div className="bg-card rounded-xl border border-border p-5">
-            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            className="glass rounded-2xl p-5">
+            <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
               <History className="w-4 h-4 text-primary" />
               Behavior History
             </h3>
@@ -196,7 +181,7 @@ const StudentDashboard = () => {
                 <p className="text-sm text-muted-foreground">No behavior records yet</p>
               ) : (
                 behaviorHistory.map((record) => (
-                  <div key={record.id} className="flex items-start gap-3 p-2 rounded-lg bg-secondary/30">
+                  <div key={record.id} className="flex items-start gap-3 p-2.5 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors">
                     {record.action_type === "positive" ? (
                       <TrendingUp className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
                     ) : (
@@ -212,12 +197,13 @@ const StudentDashboard = () => {
                 ))
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Grades */}
-        <div className="bg-card rounded-xl border border-border p-5">
-          <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          className="glass rounded-2xl p-5">
+          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <GraduationCap className="w-4 h-4 text-primary" />
             My Grades
           </h3>
@@ -227,27 +213,27 @@ const StudentDashboard = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-2 text-muted-foreground font-medium">Course</th>
-                    <th className="text-left py-2 text-muted-foreground font-medium">Type</th>
-                    <th className="text-left py-2 text-muted-foreground font-medium">Grade</th>
-                    <th className="text-left py-2 text-muted-foreground font-medium">Date</th>
+                  <tr className="border-b border-border/50">
+                    <th className="text-left py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Course</th>
+                    <th className="text-left py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Type</th>
+                    <th className="text-left py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Grade</th>
+                    <th className="text-left py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wider">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {grades.map((grade: any) => (
-                    <tr key={grade.id} className="border-b border-border/50">
-                      <td className="py-2 text-foreground">{grade.courses?.name || "—"}</td>
-                      <td className="py-2 text-foreground capitalize">{grade.grade_type}</td>
-                      <td className="py-2 text-foreground">{grade.grade_value ?? "—"}/{grade.max_value ?? 100}</td>
-                      <td className="py-2 text-muted-foreground">{format(new Date(grade.graded_at), "MMM dd, yyyy")}</td>
+                    <tr key={grade.id} className="border-b border-border/30 hover:bg-secondary/30 transition-colors">
+                      <td className="py-2.5 text-foreground">{grade.courses?.name || "—"}</td>
+                      <td className="py-2.5 text-foreground capitalize">{grade.grade_type}</td>
+                      <td className="py-2.5 text-foreground font-semibold">{grade.grade_value ?? "—"}/{grade.max_value ?? 100}</td>
+                      <td className="py-2.5 text-muted-foreground">{format(new Date(grade.graded_at), "MMM dd, yyyy")}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </MainLayout>
   );
@@ -292,11 +278,36 @@ const AdminDashboard = () => {
 
   return (
     <MainLayout title="Dashboard">
+      {/* AI Status Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass rounded-2xl p-4 mb-6 flex items-center justify-between neon-border"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+            <Brain className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">AI Monitoring System</p>
+            <p className="text-xs text-muted-foreground">All classrooms connected • Real-time analysis active</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-neon-cyan" />Face Detection</span>
+          <span className="flex items-center gap-1.5"><Scan className="w-3.5 h-3.5 text-accent" />Behavior AI</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            Online
+          </span>
+        </div>
+      </motion.div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <MetricCard title="Active Courses" value={coursesCount} icon={BookOpen} trend={{ value: 0, isPositive: true }} color="primary" />
-        <MetricCard title="Active Alerts" value={incidentsCount} icon={AlertTriangle} trend={{ value: 0, isPositive: false }} color="warning" />
-        <MetricCard title="Total Students" value={studentsCount} icon={Users} trend={{ value: 0, isPositive: true }} color="info" />
-        <MetricCard title="Attendance Records" value={attendanceCount} icon={TrendingUp} trend={{ value: 0, isPositive: true }} color="success" />
+        <MetricCard title="Active Courses" value={coursesCount} icon={BookOpen} trend={{ value: 0, isPositive: true }} color="primary" index={0} />
+        <MetricCard title="Active Alerts" value={incidentsCount} icon={AlertTriangle} trend={{ value: 0, isPositive: false }} color="warning" index={1} />
+        <MetricCard title="Total Students" value={studentsCount} icon={Users} trend={{ value: 0, isPositive: true }} color="info" index={2} />
+        <MetricCard title="Attendance Records" value={attendanceCount} icon={TrendingUp} trend={{ value: 0, isPositive: true }} color="success" index={3} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

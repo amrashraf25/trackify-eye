@@ -9,9 +9,11 @@ const Alerts = () => {
 
   return (
     <MainLayout title="Alerts">
-      <div className="bg-alert-card rounded-2xl border border-alert-border p-6">
+      <div className="glass rounded-2xl p-6 neon-border">
         <SearchBar value={searchQuery} onChange={setSearchQuery} />
-        <RealTimeFeed searchQuery={searchQuery} />
+        <div className="mt-6">
+          <RealTimeFeed searchQuery={searchQuery} />
+        </div>
         <IncidentTable searchQuery={searchQuery} />
       </div>
     </MainLayout>
