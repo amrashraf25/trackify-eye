@@ -79,7 +79,14 @@ const Auth = () => {
               <img
                 src={owlMascot}
                 alt="Trackify Owl"
-                className="w-36 h-36 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)]"
+                className="w-40 h-40 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)]"
+              />
+              {/* Winking eyelid overlay on the camera lens eye */}
+              <motion.div
+                className="absolute top-[28%] left-[18%] w-[30%] h-[22%] bg-[hsl(210,40%,15%)] rounded-b-full origin-top"
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               />
               <div className="absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-2xl scale-110" />
             </div>
