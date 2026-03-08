@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { TrendingDown, TrendingUp, Plus } from "lucide-react";
+import { TrendingDown, TrendingUp, Plus, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,9 +19,11 @@ interface DoctorBehaviorSectionProps {
   userId?: string;
 }
 
+const weeks = Array.from({ length: 16 }, (_, i) => i + 1);
+
 const DoctorBehaviorSection = ({ doctorId, doctorName, userId }: DoctorBehaviorSectionProps) => {
   const [open, setOpen] = useState(false);
-  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState<string>("all");
   const [action, setAction] = useState({ action_name: "", action_type: "negative", score_change: "-5", notes: "", week_number: "1" });
   const queryClient = useQueryClient();
 
@@ -45,8 +48,8 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId }: DoctorBehaviorS
         .select("*")
         .eq("doctor_id", doctorId)
         .order("created_at", { ascending: false });
-      if (selectedWeek !== null) {
-        query = query.eq("week_number", selectedWeek);
+      if (selectedWeek !== "all") {
+        query = query.eq("week_number", parseInt(selectedWeek));
       }
       const { data, error } = await query.limit(20);
       if (error) return [];
@@ -54,7 +57,7 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId }: DoctorBehaviorS
     },
   });
 
-  const weeklyScore = selectedWeek !== null && records.length > 0
+  const weeklyScore = selectedWeek !== "all" && records.length > 0
     ? Math.max(0, Math.min(100, 100 + records.reduce((sum: number, r: any) => sum + r.score_change, 0)))
     : null;
 
@@ -71,6 +74,7 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId }: DoctorBehaviorS
         action_type: action.action_type,
         score_change: scoreChange,
         notes: action.notes || null,
+        week_number: parseInt(action.week_number),
       });
       if (error) throw error;
     },
@@ -79,79 +83,146 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId }: DoctorBehaviorS
       queryClient.invalidateQueries({ queryKey: ["doctor-behavior-records", doctorId] });
       toast.success("Behavior record added");
       setOpen(false);
-      setAction({ action_name: "", action_type: "negative", score_change: "-5", notes: "" });
+      setAction({ action_name: "", action_type: "negative", score_change: "-5", notes: "", week_number: "1" });
     },
     onError: (err: any) => toast.error(err.message),
   });
 
+  const handleReset = async () => {
+    await supabase.from("doctor_behavior_records").delete().eq("doctor_id", doctorId);
+    await supabase.from("doctor_behavior_scores").update({ score: 100 }).eq("doctor_id", doctorId);
+    queryClient.invalidateQueries({ queryKey: ["doctor-behavior-score", doctorId] });
+    queryClient.invalidateQueries({ queryKey: ["doctor-behavior-records", doctorId] });
+    toast.success("Behavior score reset to 100%");
+  };
+
   const behaviorScore = score ?? 100;
-  const scoreColor = behaviorScore >= 80 ? "text-emerald-500" : behaviorScore >= 60 ? "text-amber-500" : "text-destructive";
-  const progressColor = behaviorScore >= 80 ? "bg-emerald-500" : behaviorScore >= 60 ? "bg-amber-500" : "bg-destructive";
+  const displayScore = weeklyScore ?? behaviorScore;
+  const scoreColor = displayScore >= 80 ? "text-emerald-500" : displayScore >= 60 ? "text-amber-500" : "text-destructive";
+  const progressColor = displayScore >= 80 ? "bg-emerald-500" : displayScore >= 60 ? "bg-amber-500" : "bg-destructive";
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="glass rounded-2xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-base font-bold text-foreground flex items-center gap-2">
           <TrendingDown className="w-4 h-4 text-destructive" />
-          Behavior Score
+          {selectedWeek !== "all" ? `Week ${selectedWeek} Behavior` : "Behavior Score"}
         </h3>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
-              <Plus className="w-4 h-4 mr-1" /> Record
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="glass">
-            <DialogHeader><DialogTitle>Record Behavior — {doctorName}</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Action</Label>
-                <Input value={action.action_name}
-                  onChange={(e) => setAction({ ...action, action_name: e.target.value })}
-                  placeholder="e.g. Late to class, Excellent teaching..."
-                  className="rounded-xl" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+        <div className="flex items-center gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" className="rounded-xl">
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset Behavior Score</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will delete all behavior records for <strong>{doctorName}</strong> and reset their score to 100%. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleReset}>Reset</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                <Plus className="w-4 h-4 mr-1" /> Record
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="glass">
+              <DialogHeader><DialogTitle>Record Behavior — {doctorName}</DialogTitle></DialogHeader>
+              <div className="space-y-4">
                 <div>
-                  <Label>Type</Label>
-                  <Select value={action.action_type}
-                    onValueChange={(v) => setAction({ ...action, action_type: v, score_change: v === "positive" ? "5" : "-5" })}>
-                    <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="positive">Positive</SelectItem>
-                      <SelectItem value="negative">Negative</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Score Change</Label>
-                  <Input type="number" value={action.score_change}
-                    onChange={(e) => setAction({ ...action, score_change: e.target.value })}
+                  <Label>Action</Label>
+                  <Input value={action.action_name}
+                    onChange={(e) => setAction({ ...action, action_name: e.target.value })}
+                    placeholder="e.g. Late to class, Excellent teaching..."
                     className="rounded-xl" />
                 </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>Type</Label>
+                    <Select value={action.action_type}
+                      onValueChange={(v) => setAction({ ...action, action_type: v, score_change: v === "positive" ? "5" : "-5" })}>
+                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="positive">Positive</SelectItem>
+                        <SelectItem value="negative">Negative</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Score Change</Label>
+                    <Input type="number" value={action.score_change}
+                      onChange={(e) => setAction({ ...action, score_change: e.target.value })}
+                      className="rounded-xl" />
+                  </div>
+                  <div>
+                    <Label>Week</Label>
+                    <Select value={action.week_number}
+                      onValueChange={(v) => setAction({ ...action, week_number: v })}>
+                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {weeks.map((w) => (
+                          <SelectItem key={w} value={String(w)}>Week {w}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label>Notes (optional)</Label>
+                  <Textarea value={action.notes}
+                    onChange={(e) => setAction({ ...action, notes: e.target.value })}
+                    placeholder="Additional notes..."
+                    className="rounded-xl" />
+                </div>
+                <Button onClick={() => addRecord.mutate()} className="w-full rounded-xl">Submit</Button>
               </div>
-              <div>
-                <Label>Notes (optional)</Label>
-                <Textarea value={action.notes}
-                  onChange={(e) => setAction({ ...action, notes: e.target.value })}
-                  placeholder="Additional notes..."
-                  className="rounded-xl" />
-              </div>
-              <Button onClick={() => addRecord.mutate()} className="w-full rounded-xl">Submit</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Week filter */}
+      <div className="flex gap-1.5 flex-wrap mb-4">
+        <Button
+          size="sm"
+          variant={selectedWeek === "all" ? "default" : "outline"}
+          className="rounded-lg text-xs h-7 px-2"
+          onClick={() => setSelectedWeek("all")}
+        >
+          All
+        </Button>
+        {weeks.map((w) => (
+          <Button
+            key={w}
+            size="sm"
+            variant={selectedWeek === String(w) ? "default" : "outline"}
+            className="rounded-lg text-xs h-7 px-2"
+            onClick={() => setSelectedWeek(String(w))}
+          >
+            W{w}
+          </Button>
+        ))}
       </div>
 
       {/* Score display */}
       <div className="flex items-center gap-4 mb-5 p-4 bg-secondary/30 rounded-xl">
         <div className="flex-1">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Overall Score</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+            {selectedWeek !== "all" ? `Week ${selectedWeek} Score` : "Overall Score"}
+          </p>
           <div className="flex items-center gap-3">
             <div className="relative h-2 flex-1 rounded-full bg-secondary overflow-hidden">
-              <div className={`h-full rounded-full transition-all ${progressColor}`} style={{ width: `${behaviorScore}%` }} />
+              <div className={`h-full rounded-full transition-all ${progressColor}`} style={{ width: `${displayScore}%` }} />
             </div>
-            <span className={`text-xl font-bold ${scoreColor}`}>{behaviorScore}%</span>
+            <span className={`text-xl font-bold ${scoreColor}`}>{displayScore}%</span>
           </div>
         </div>
       </div>
@@ -169,7 +240,7 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId }: DoctorBehaviorS
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">{record.action_name}</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {record.score_change > 0 ? "+" : ""}{record.score_change}% • {format(new Date(record.created_at), "MMM dd, yyyy")}
+                  {record.score_change > 0 ? "+" : ""}{record.score_change}% • Week {record.week_number ?? "—"} • {format(new Date(record.created_at), "MMM dd, yyyy")}
                 </p>
                 {record.notes && <p className="text-xs text-muted-foreground mt-1">{record.notes}</p>}
               </div>
@@ -177,7 +248,9 @@ const DoctorBehaviorSection = ({ doctorId, doctorName, userId }: DoctorBehaviorS
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">No behavior records yet</p>
+        <p className="text-sm text-muted-foreground">
+          {selectedWeek !== "all" ? `No behavior records for Week ${selectedWeek}` : "No behavior records yet"}
+        </p>
       )}
     </motion.div>
   );
