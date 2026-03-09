@@ -22,33 +22,60 @@ const Header = ({ title }: HeaderProps) => {
   const notifRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  // Fetch notifications for students
-  const { data: notifications = [] } = useQuery({
-    queryKey: ["my-notifications", user?.id],
+  type HeaderNotification = Tables<"notifications"> | Tables<"doctor_notifications">;
+  const supportsNotifications = role === "student" || role === "doctor";
+
+  const notificationQueryKey = ["header-notifications", role, user?.id];
+
+  // Fetch notifications for students and doctors
+  const { data: notifications = [] } = useQuery<HeaderNotification[]>({
+    queryKey: notificationQueryKey,
     queryFn: async () => {
+      if (!user?.id || !supportsNotifications) return [];
+
+      if (role === "doctor") {
+        const { data, error } = await supabase
+          .from("doctor_notifications")
+          .select("*")
+          .eq("doctor_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+
+        if (error) return [];
+        return data;
+      }
+
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(20);
+
       if (error) return [];
       return data;
     },
-    enabled: !!user?.id && role === "student",
+    enabled: !!user?.id && supportsNotifications,
     refetchInterval: 15000,
   });
 
-  // Realtime subscription for students
+  // Realtime subscription for students and doctors
   useEffect(() => {
-    if (role !== "student" || !user?.id) return;
+    if (!supportsNotifications || !user?.id) return;
+
+    const tableName = role === "doctor" ? "doctor_notifications" : "notifications";
 
     const channel = supabase
-      .channel("student-notifications")
+      .channel(`header-notifications-${role}-${user.id}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications" },
+        {
+          event: "*",
+          schema: "public",
+          table: tableName,
+          ...(role === "doctor" ? { filter: `doctor_id=eq.${user.id}` } : {}),
+        },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["my-notifications"] });
+          queryClient.invalidateQueries({ queryKey: notificationQueryKey });
         }
       )
       .subscribe();
@@ -56,9 +83,9 @@ const Header = ({ title }: HeaderProps) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [role, user?.id, queryClient]);
+  }, [supportsNotifications, role, user?.id, queryClient]);
 
-  const unreadCount = notifications.filter((n: any) => !n.is_read).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   // Fetch avatar
   const { data: avatarUrl } = useQuery({
