@@ -103,21 +103,36 @@ const Header = ({ title }: HeaderProps) => {
 
   const markAsRead = useMutation({
     mutationFn: async (id: string) => {
+      if (!supportsNotifications) return;
+
+      if (role === "doctor") {
+        await supabase.from("doctor_notifications").update({ is_read: true }).eq("id", id);
+        return;
+      }
+
       await supabase.from("notifications").update({ is_read: true }).eq("id", id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-notifications"] });
+      queryClient.invalidateQueries({ queryKey: notificationQueryKey });
     },
   });
 
   const markAllRead = useMutation({
     mutationFn: async () => {
-      const unreadIds = notifications.filter((n: any) => !n.is_read).map((n: any) => n.id);
+      if (!supportsNotifications) return;
+
+      const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
       if (unreadIds.length === 0) return;
+
+      if (role === "doctor") {
+        await supabase.from("doctor_notifications").update({ is_read: true }).in("id", unreadIds);
+        return;
+      }
+
       await supabase.from("notifications").update({ is_read: true }).in("id", unreadIds);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-notifications"] });
+      queryClient.invalidateQueries({ queryKey: notificationQueryKey });
     },
   });
 
