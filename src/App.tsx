@@ -32,6 +32,7 @@ const queryClient = new QueryClient({
 
 const AppContent = () => {
   useIncidentNotifications();
+  useDoctorNotifications();
   
   return (
     <Routes>
