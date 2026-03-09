@@ -436,9 +436,11 @@ const Courses = () => {
                 <TabsTrigger value="behavior" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <TrendingUp className="w-3.5 h-3.5 mr-1.5" />Behavior
                 </TabsTrigger>
-                <TabsTrigger value="students" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Users className="w-3.5 h-3.5 mr-1.5" />Students
-                </TabsTrigger>
+                {role !== "student" && (
+                  <TabsTrigger value="students" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <Users className="w-3.5 h-3.5 mr-1.5" />Students
+                  </TabsTrigger>
+                )}
               </TabsList>
             </motion.div>
 
