@@ -1,4 +1,4 @@
-import { Bell, User, Sun, Moon, Check } from "lucide-react";
+import { Bell, User, Sun, Moon, Check, AlertTriangle } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
+import type { Tables } from "@/integrations/supabase/types";
 
 interface HeaderProps {
   title: string;
