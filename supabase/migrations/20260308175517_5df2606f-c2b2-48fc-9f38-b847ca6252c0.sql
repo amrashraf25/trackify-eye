@@ -1,0 +1,1 @@
+ALTER TABLE public.behavior_records ADD COLUMN week_number integer DEFAULT NULL;

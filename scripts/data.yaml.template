@@ -1,0 +1,28 @@
+# Trackify Behavior Detection — Unified Dataset Config
+# Copy this to merged_dataset/data.yaml after merging all datasets
+#
+# Classes:
+#   0: person     — anchor class, body context
+#   1: phone_use  — student holding/looking at phone
+#   2: sleeping   — head down, eyes closed on desk
+#   3: talking    — student talking to neighbor
+#   4: cheating   — looking sideways, copying, not paying attention
+#   5: fighting   — physical altercation
+#   6: eating     — (COCO fallback, may have 0 annotations)
+#   7: drinking   — (COCO fallback, may have 0 annotations)
+
+path: ./merged_dataset
+train: train/images
+val: val/images
+test: test/images
+
+nc: 8
+names:
+  0: person
+  1: phone_use
+  2: sleeping
+  3: talking
+  4: cheating
+  5: fighting
+  6: eating
+  7: drinking
