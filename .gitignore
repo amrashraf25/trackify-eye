@@ -1,0 +1,73 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+local-api/server.log
+
+# Dependencies
+node_modules
+local-api/node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Environment / secrets
+*.local
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# AI models and training datasets (large binary files)
+*.onnx
+*.pt
+*.pth
+*.weights
+merged_dataset/
+merged_dataset_v2.zip
+dataset_preview/
+trackify_training/
+face_landmarker.task
+*.jsonl
+logs_*.txt
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+local-api/db.json
+
+# Editor directories
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Uploads / temp
+local-api/uploads/
+*.tmp
+
+# Claude Code internal files
+.claude/
+package-lock.json

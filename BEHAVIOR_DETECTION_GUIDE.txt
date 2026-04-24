@@ -1,0 +1,321 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║         TRACKIFY — BEHAVIOR DETECTION COMPLETE GUIDE               ║
+║    Datasets · Models · Architecture · Training · Integration        ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ WHAT IS ALREADY BUILT (v2 — current version)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Detection Module     | Method                    | Status
+---------------------|---------------------------|--------
+Face Recognition     | InsightFace buffalo_l     | ✅ Done
+Sleeping             | MediaPipe eye closure     | ✅ Done
+Drowsy               | MediaPipe head drooping   | ✅ Done (new)
+Talking              | MediaPipe mouth openness  | ✅ Done
+Phone                | YOLOv8n COCO labels       | ✅ Done
+Eating/Drinking      | YOLOv8n COCO labels       | ✅ Done
+Cheating             | MediaPipe head yaw (nose  | ✅ Done (new)
+                     | offset vs eye center)     |
+Fighting             | YOLO person bbox overlap  | ✅ Done (new heuristic)
+Severity Levels      | critical/high/medium/low  | ✅ Done (new)
+Session Alert Count  | Per-behavior counters     | ✅ Done (new)
+Real-time SSE stream | Server-Sent Events        | ✅ Done (new)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 1 — DATASETS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+────────────────────────────────────────────────────────────────────────
+ MODULE 1: PHONE DETECTION (in classroom)
+────────────────────────────────────────────────────────────────────────
+
+★ BEST: SCB-Dataset (Student Classroom Behavior)
+  URL:   https://github.com/Whiffe/SCB-dataset
+  Why:   Classroom-specific. Contains: phone use, sleeping, eating,
+         drinking, raising hand, writing — all in real classroom settings.
+         Much better than COCO for classroom phone detection.
+  Format: YOLO annotations, ~10k images
+  Download:
+    git clone https://github.com/Whiffe/SCB-dataset
+
+★ GOOD: Roboflow Universe — "Cell Phone Detection"
+  URL:   https://universe.roboflow.com/roboflow-100/cell-phone-detection
+  Why:   50k+ images, YOLO format, easy export
+  Download via API:
+    pip install roboflow
+    from roboflow import Roboflow
+    rf = Roboflow(api_key="YOUR_KEY")
+    project = rf.workspace("roboflow-100").project("cell-phone-detection")
+    dataset = project.version(1).download("yolov8")
+
+★ ALSO: CampusGuard Dataset
+  URL:   Search "CampusGuard dataset phone sleeping violence"
+         on Google Scholar / IEEE Xplore
+  Why:   Specifically designed for campus behavior monitoring.
+         Includes phone, sleeping, violence categories.
+  Format: Available on request from authors (paper: "CampusGuard")
+
+
+────────────────────────────────────────────────────────────────────────
+ MODULE 2: SLEEPING DETECTION (in classroom)
+────────────────────────────────────────────────────────────────────────
+
+★ BEST: SCB-Dataset (same as above — has sleeping class)
+  URL:   https://github.com/Whiffe/SCB-dataset
+  Why:   Real classroom sleeping poses with YOLOv8 annotations
+
+★ GOOD: Driver Drowsiness Dataset (transferable to classroom)
+  URL:   https://www.kaggle.com/datasets/rakibuleceruet/drowsiness-prediction-dataset
+  Why:   High-quality eye closure + head drooping images
+  Download: kaggle datasets download rakibuleceruet/drowsiness-prediction-dataset
+
+★ GOOD: MRL Eye Dataset (eye state detection)
+  URL:   http://mrl.cs.vsb.cz/eyedataset
+  Why:   84k eye images labeled open/closed. Perfect for training
+         a lightweight eye-state classifier.
+
+★ Head Pose Dataset (for drooping detection):
+  URL:   https://www.kaggle.com/datasets/trainingdatapro/head-pose-dataset
+         Also: BIWI Kinect Head Pose Database
+
+
+────────────────────────────────────────────────────────────────────────
+ MODULE 3: CHEATING DETECTION (exam monitoring)
+────────────────────────────────────────────────────────────────────────
+
+★ BEST: Student Cheating Detection Dataset (Mendeley Data)
+  URL:   https://data.mendeley.com/datasets/cheating-students/
+         Search: "student cheating detection dataset mendeley"
+  Why:   Contains labeled images of students cheating, looking sideways,
+         using phones during exams, copying. Specifically designed for
+         exam monitoring AI systems.
+  Download: Direct download from Mendeley Data website (free registration)
+
+★ GOOD: Gaze Estimation Datasets (for gaze-based cheating)
+  - MPIIGaze: https://www.mpi-inf.mpg.de/departments/computer-vision-and-machine-learning/research/gaze-based-human-computer-interaction/appearance-based-gaze-estimation-in-the-wild
+  - GazeCapture: https://gazecapture.csail.mit.edu/
+  Why:   Train a gaze direction model — if student gazes left/right
+         repeatedly, flag as cheating.
+
+★ GOOD: Roboflow — "Exam Cheating Detection"
+  URL:   https://universe.roboflow.com (search "cheating detection")
+  Format: YOLO, easy to download
+
+
+────────────────────────────────────────────────────────────────────────
+ MODULE 4: FIGHTING / VIOLENCE DETECTION
+────────────────────────────────────────────────────────────────────────
+
+★ BEST: RWF-2000 Dataset (Real World Fights)
+  URL:   https://github.com/mchengny/RWF2000-Video-Database-for-Violence-Detection
+  Why:   2000 real-world fight videos from surveillance cameras.
+         Most realistic for school/campus fighting detection.
+         Each video is 5 seconds, balanced 50/50 fight/non-fight.
+  Format: MP4 videos + labels
+  Download: Request access on GitHub (it's free, just fill a form)
+
+★ BEST: Hockey Fight Dataset
+  URL:   https://www.kaggle.com/datasets/yassershrief/hockey-fight-videodataset
+  Why:   1000 videos of fights and non-fights. Clean labels.
+  Download:
+    kaggle datasets download yassershrief/hockey-fight-videodataset
+
+★ GOOD: UCF-Crime Dataset (includes fighting)
+  URL:   https://www.crcv.ucf.edu/projects/real-world/
+  Why:   13 crime categories including fighting, robbery, abuse.
+         1900 videos total. Good for multi-class behavior training.
+  Download: Available from UCF website
+
+★ GOOD: CCTV Fight Dataset
+  URL:   https://github.com/sayibet/fight-detection-surv-dataset
+  Why:   Specifically from CCTV cameras (most similar to classroom setup)
+
+★ For YOLOv8 frame-level detection (faster, no video model needed):
+  URL:   https://universe.roboflow.com/search?q=fighting+violence
+  Download fighting frame images with YOLO annotations
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 2 — MODEL RECOMMENDATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use Case              | Recommended Model       | Why
+----------------------|-------------------------|-----------------------------
+Real-time obj detect  | YOLOv8n (nano)          | Fastest, already in project
+Better accuracy       | YOLOv8s (small)         | 2x slower but much better
+Pose/skeleton         | YOLOv8n-pose            | Detects 17 body keypoints
+                      |                         | for fighting, sleeping pose
+Gaze direction        | MediaPipe FaceMesh      | Already in project, free
+                      | + head pose solvePnP    |
+Video violence        | SlowFast (PyTorch Hub)  | State-of-art video action
+                      | or TimeSformer          | recognition
+Lightweight violence  | MobileNet + LSTM        | Runs on CPU, ~15 FPS
+Face recognition      | InsightFace buffalo_l   | Already in project, great
+
+
+────────────────────────────────────────────────────────────────────────
+ UPGRADE PATH — How to go from heuristics to trained models
+────────────────────────────────────────────────────────────────────────
+
+STEP 1: Improve phone + sleeping with SCB-Dataset
+  # Install datasets
+  git clone https://github.com/Whiffe/SCB-dataset
+
+  # Fine-tune YOLOv8 on SCB (replaces COCO for classroom behaviors)
+  from ultralytics import YOLO
+  model = YOLO('yolov8n.pt')  # start from pretrained
+  results = model.train(
+      data='SCB-dataset/data.yaml',
+      epochs=50,
+      imgsz=640,
+      batch=16,
+      device='cpu',  # or 'cuda' if GPU available
+      name='scb_classroom'
+  )
+  # Saved to: runs/detect/scb_classroom/weights/best.pt
+  # Use this .pt file instead of yolov8n.pt in the backend
+
+STEP 2: Add fighting detection with RWF-2000
+  # Extract frames from videos
+  import cv2, os
+  def extract_frames(video_path, out_dir, every_n=5):
+      cap = cv2.VideoCapture(video_path)
+      frame_count = 0
+      saved = 0
+      while cap.isOpened():
+          ret, frame = cap.read()
+          if not ret: break
+          if frame_count % every_n == 0:
+              cv2.imwrite(f"{out_dir}/{saved:06d}.jpg", frame)
+              saved += 1
+          frame_count += 1
+
+  # Then label frames with Roboflow or CVAT (free tools)
+  # Fine-tune YOLOv8 on fight/no-fight frames
+
+STEP 3: Gaze-based cheating (advanced)
+  pip install l2cs-net  # Gaze estimation model
+  # L2CS-Net estimates gaze direction (yaw + pitch) from face image
+  # If |yaw| > 30 degrees for >3 seconds → flag as cheating
+  from l2cs import Pipeline
+  gaze_pipeline = Pipeline(weights='L2CSNet_gaze360.pkl', device='cpu')
+
+STEP 4: Video-level violence (most accurate)
+  pip install torch torchvision
+  # Use pretrained SlowFast from PyTorch Hub
+  model = torch.hub.load('facebookresearch/pytorchvideo', 'slowfast_r50', pretrained=True)
+  # Feed 32-frame clips → binary fight/no-fight classification
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 3 — ARCHITECTURE OVERVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current Pipeline (implemented):
+
+  Camera Frame (640x480)
+       │
+       ├─► [MJPEG Stream] ──────────────────────────► Browser (video_feed)
+       │
+       └─► [AI Worker Thread]
+               │
+               ├─► MediaPipe FaceMesh ─────► detect_cheating (head yaw)
+               │        │                    detect_talking (mouth open)
+               │        │                    detect_eyes_closed (EAR)
+               │        └────────────────►   detect_head_drooping (pitch)
+               │
+               ├─► InsightFace ────────────► Face embedding → student match
+               │
+               ├─► YOLOv8n ───────────────► Phone/Eating/Drinking labels
+               │        └─ person boxes ──► detect_fighting (bbox overlap)
+               │
+               └─► Results ──────────────► SSE /stream (120ms)
+                                              └─► Browser (EventSource)
+
+SSE Data Format sent to frontend:
+  {
+    "faces": [
+      {
+        "name": "Ahmed Tamer",
+        "behavior": "Phone, Talking",
+        "behaviors": ["Phone", "Talking"],
+        "severity": "medium",
+        "confidence": 0.82,
+        "student_code": "221005716",
+        "student_id": "uuid..."
+      }
+    ],
+    "face_count": 1,
+    "fps": 18,
+    "alerts": {
+      "fighting": 0,
+      "cheating": 3,
+      "sleeping": 1,
+      "phone": 12,
+      "talking": 45,
+      "drowsy": 2
+    },
+    "uptime": 142
+  }
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 4 — ACCURACY NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current accuracy estimates (no custom training):
+
+  Module      | Accuracy | Notes
+  ------------|----------|------------------------------------------
+  Face recog  | ~90%     | Depends on photo quality
+  Sleeping    | ~85%     | Eye closure + head drooping combined
+  Drowsy      | ~70%     | Head drooping heuristic
+  Talking     | ~75%     | Mouth openness threshold
+  Phone       | ~80%     | COCO YOLOv8 cell phone class
+  Cheating    | ~65%     | Head yaw heuristic (landmark geometry)
+  Fighting    | ~50%     | Bounding box overlap — many false positives
+
+After fine-tuning on proper datasets:
+  Phone       | ~95%     | SCB-Dataset fine-tuned YOLOv8
+  Sleeping    | ~92%     | SCB-Dataset pose detection
+  Fighting    | ~88%     | RWF-2000 trained model
+  Cheating    | ~82%     | Mendeley cheating dataset + gaze model
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PART 5 — QUICK DATASET DOWNLOAD COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Install Kaggle CLI
+pip install kaggle
+# Set up kaggle.json from: https://www.kaggle.com/settings (API token)
+
+# SCB Classroom Behavior Dataset (GitHub)
+git clone https://github.com/Whiffe/SCB-dataset
+
+# Hockey Fight (Kaggle)
+kaggle datasets download -d yassershrief/hockey-fight-videodataset
+
+# Driver Drowsiness (Kaggle)
+kaggle datasets download -d rakibuleceruet/drowsiness-prediction-dataset
+
+# Roboflow datasets (sign up free at roboflow.com, get API key)
+pip install roboflow
+python -c "
+from roboflow import Roboflow
+rf = Roboflow(api_key='YOUR_API_KEY')
+# Phone detection
+rf.workspace('roboflow-100').project('cell-phone-detection').version(1).download('yolov8')
+"
+
+# Mendeley Cheating Dataset
+# Visit: https://data.mendeley.com
+# Search: 'student cheating detection'
+# Download directly from the web interface (free, requires account)
+
+# RWF-2000 (Fighting)
+# Visit: https://github.com/mchengny/RWF2000-Video-Database-for-Violence-Detection
+# Fill out the Google Form to get download link (free)
+

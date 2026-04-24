@@ -1,0 +1,202 @@
+╔══════════════════════════════════════════════════════════════════╗
+║              TRACKIFY — FULL SETUP GUIDE                        ║
+║         Face Recognition Attendance & Behavior System           ║
+╚══════════════════════════════════════════════════════════════════╝
+
+The project has 3 parts that must all run at the same time:
+  1. Local API Server  (Node.js)     — the database & file storage
+  2. Python AI Backend (Python)      — face recognition via webcam
+  3. Frontend          (Node.js)     — the website you open in browser
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 1 — INSTALL REQUIRED SOFTWARE (one-time only)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A) Install Node.js (v18 or newer)
+   → https://nodejs.org/  (download the LTS version)
+   → During install, check "Automatically install necessary tools"
+
+B) Install Python (v3.10 or newer — NOT 3.14 if possible, use 3.11)
+   → https://www.python.org/downloads/
+   → During install, CHECK "Add Python to PATH"
+   → Recommended: Python 3.11 for best package compatibility
+
+C) Install Git (optional, only needed to clone the repo)
+   → https://git-scm.com/downloads
+
+D) Make sure you have a webcam connected to the PC
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 2 — INSTALL NODE.JS DEPENDENCIES (one-time only)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open a terminal (Command Prompt or PowerShell) and run:
+
+  1. Install frontend dependencies:
+     cd path\to\trackify-eye-main
+     npm install
+
+  2. Install local API dependencies:
+     cd path\to\trackify-eye-main\local-api
+     npm install
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 3 — INSTALL PYTHON DEPENDENCIES (one-time only)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open a terminal and run these commands one by one:
+
+  pip install flask flask-cors
+  pip install opencv-python
+  pip install numpy
+  pip install requests
+  pip install insightface
+  pip install onnxruntime
+  pip install mediapipe
+  pip install scikit-learn
+  pip install ultralytics
+  pip install Pillow
+
+  ⚠ If "pip" doesn't work, try "pip3" or "python -m pip install ..."
+  ⚠ InsightFace will download the buffalo_l model (~500MB) on first run
+  ⚠ YOLO will download yolov8n.pt (~6MB) on first run
+     → Both downloads are automatic, just needs internet on first launch
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 4 — COPY THE PYTHON BACKEND FILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  The Python backend file is included in this zip:
+    trackify_backend.py
+
+  Place it anywhere you like (e.g., your Desktop).
+  You will run it separately from the website files.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 5 — RUNNING THE PROJECT (every time you want to use it)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open 3 separate terminal windows and run ONE command in each:
+
+  ┌─ Terminal 1: Local API (Database) ────────────────────────────┐
+  │  cd path\to\trackify-eye-main\local-api                       │
+  │  node server.js                                               │
+  │                                                               │
+  │  ✓ Ready when you see: "Local API listening on port 3001"     │
+  └───────────────────────────────────────────────────────────────┘
+
+  ┌─ Terminal 2: Python AI Backend ───────────────────────────────┐
+  │  python trackify_backend.py                                   │
+  │  (or: python3 trackify_backend.py)                            │
+  │                                                               │
+  │  ✓ Ready when you see: "API server starting on port 5000"     │
+  │  ⚠ First run downloads AI models — wait until "✓ Camera ready"│
+  └───────────────────────────────────────────────────────────────┘
+
+  ┌─ Terminal 3: Frontend (Website) ──────────────────────────────┐
+  │  cd path\to\trackify-eye-main                                 │
+  │  npm run dev                                                  │
+  │                                                               │
+  │  ✓ Ready when you see: "Local: http://localhost:8080"         │
+  └───────────────────────────────────────────────────────────────┘
+
+  Then open your browser and go to:  http://localhost:8080
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ LOGIN CREDENTIALS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Admin:    admin@trackify.com    / admin123
+  Dean:     dean@trackify.com     / dean123
+  Doctor:   doctor@trackify.com   / doctor123
+  Student:  student@trackify.com  / student123
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ HOW TO ADD A STUDENT & GET THEM RECOGNIZED BY THE CAMERA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Go to Students page → click "Add Student"
+  2. Fill in name, student code, email, password
+  3. Upload a CLEAR FRONT-FACING photo (JPG or PNG, min 300x300px)
+     - Good lighting, no sunglasses, face looking directly at camera
+  4. Click Save
+  5. Go to Camera page → click "Start Camera"
+  6. Click "Reload Students" button → AI backend loads the new face
+  7. Stand in front of the webcam — you'll be recognized within seconds!
+
+  ⚠ Tips for best recognition accuracy:
+    - Use a well-lit photo with a clear, front-facing face
+    - Avoid blurry, dark, or sideways photos
+    - Minimum photo size: 300×300 pixels
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ PORTS USED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  3001  — Local API (database + file storage)
+  5000  — Python AI backend (face recognition)
+  8080  — Frontend website
+
+  Make sure nothing else is using these ports.
+  If port 8080 conflicts, Vite may automatically use 8081, 8082, etc.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ✗ Camera shows black screen
+    → Wait 5 seconds after pressing "Start Camera" for warm-up
+    → Make sure no other app (Teams, Zoom, etc.) is using the webcam
+
+  ✗ "Cannot connect to backend" error
+    → Make sure the Python backend terminal is running (port 5000)
+    → Run: python trackify_backend.py
+
+  ✗ Student not recognized
+    → Click "Reload Students" in the Camera page after adding a student
+    → Make sure the photo has a clear, front-facing face
+
+  ✗ "pip install" fails
+    → Try: python -m pip install <package-name>
+    → Or upgrade pip first: python -m pip install --upgrade pip
+
+  ✗ InsightFace install fails on Windows
+    → Install Visual C++ Build Tools first:
+       https://visualstudio.microsoft.com/visual-cpp-build-tools/
+    → Then retry: pip install insightface
+
+  ✗ Website shows blank page / login fails
+    → Make sure the Local API terminal is running (port 3001)
+    → Run: cd local-api && node server.js
+
+  ✗ Port already in use
+    → Kill the process using that port:
+       Windows: netstat -ano | findstr :3001  → taskkill /PID <pid> /F
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ FILE STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  trackify-eye-main/         ← main project folder
+  ├── src/                   ← React frontend source code
+  ├── local-api/
+  │   ├── server.js          ← Local API server (run this with Node)
+  │   ├── db.json            ← All data (students, courses, etc.)
+  │   ├── db.js              ← Database helper
+  │   ├── query-builder.js   ← PostgREST-compatible query engine
+  │   └── uploads/           ← Student/doctor photos stored here
+  ├── .env                   ← Points frontend to local API
+  ├── package.json           ← Frontend dependencies
+  └── HOW_TO_RUN.txt         ← This file
+
+  trackify_backend.py        ← Python AI backend (run separately)
+

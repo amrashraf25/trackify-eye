@@ -1,0 +1,11 @@
+flask
+flask-cors
+opencv-python
+numpy
+requests
+insightface
+onnxruntime
+mediapipe
+scikit-learn
+ultralytics
+Pillow
