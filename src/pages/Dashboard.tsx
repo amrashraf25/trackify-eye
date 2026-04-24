@@ -17,6 +17,16 @@ import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 
+/** Maps a percentage score to a letter grade */
+function toLetterGrade(pct: number): string {
+  if (pct >= 90) return "A+";
+  if (pct >= 80) return "A";
+  if (pct >= 70) return "B";
+  if (pct >= 60) return "C";
+  if (pct >= 50) return "D";
+  return "F";
+}
+
 /* -- Course color palette (6 variants, cycle by index) -- */
 const COURSE_PALETTE = [
   { bg: "from-blue-500/20 to-cyan-500/5",     border: "border-blue-500/25",    icon: "bg-blue-500/15 text-blue-400",    bar: "bg-blue-500",   badge: "bg-blue-500/15 text-blue-400 border-blue-500/25"    },
@@ -36,6 +46,7 @@ const ScoreRing = ({ score, size = 120 }: { score: number; size?: number }) => {
   const cx    = size / 2;
   const circ  = 2 * Math.PI * r;
   const offset = animated ? circ - (score / 100) * circ : circ;
+  // Green ≥80%, Amber ≥60%, Red <60%
   const color  = score >= 80 ? "#22c55e" : score >= 60 ? "#f59e0b" : "#ef4444";
   const glow   = score >= 80 ? "drop-shadow(0 0 8px #22c55e80)" : score >= 60 ? "drop-shadow(0 0 8px #f59e0b80)" : "drop-shadow(0 0 8px #ef444480)";
 
@@ -319,7 +330,7 @@ const StudentDashboard = () => {
                     const course  = enrollment.courses;
                     if (!course) return null;
                     const palette = COURSE_PALETTE[i % COURSE_PALETTE.length];
-                    const progress = Math.floor(Math.random() * 40) + 40; // visual only
+                    const progress = 65; // placeholder — replace with real course progress data
                     const courseLetter = (course.name || "?")[0].toUpperCase();
                     return (
                       <motion.div
@@ -508,7 +519,7 @@ const StudentDashboard = () => {
                     const badgeCls   = pct >= 80 ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/25"
                                      : pct >= 60 ? "bg-amber-500/15 text-amber-400 border-amber-500/25"
                                      :             "bg-red-500/15 text-red-400 border-red-500/25";
-                    const letterGrade = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F";
+                    const letterGrade = toLetterGrade(pct);
                     return (
                       <motion.div
                         key={grade.id}

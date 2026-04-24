@@ -28,10 +28,10 @@ import CourseMaterialsTab from "@/components/courses/CourseMaterialsTab";
 function parseAttachments(desc: string | null) {
   if (!desc) return [];
   const rx = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
-  const out: { name: string; url: string }[] = [];
-  let m;
-  while ((m = rx.exec(desc)) !== null) out.push({ name: m[1], url: m[2] });
-  return out;
+  const links: { name: string; url: string }[] = [];
+  let match;
+  while ((match = rx.exec(desc)) !== null) links.push({ name: match[1], url: match[2] });
+  return links;
 }
 function cleanDesc(desc: string | null) {
   if (!desc) return null;

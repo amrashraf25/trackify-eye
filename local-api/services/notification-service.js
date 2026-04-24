@@ -17,7 +17,6 @@ const _behaviorNotifTs = new Map(); // key → timestamp (ms)
 const BEHAVIOR_NOTIF_COOLDOWN_MS = {
   critical: 0,              // always immediate
   high:     5 * 60 * 1000,  // 5 min
-  medium:   15 * 60 * 1000, // 15 min (not used — medium not notified)
   low:      Infinity,        // never
 };
 

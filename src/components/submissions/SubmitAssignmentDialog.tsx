@@ -227,7 +227,9 @@ export default function SubmitAssignmentDialog({
               .update({ score: Math.max(0, Math.min(100, existing.score + behavior.scoreChange)) })
               .eq("id", existing.id);
           }
-        } catch (_) {}
+        } catch (err) {
+          console.error("Submission error:", err);
+        }
       }
 
       // Show behavior feedback to student

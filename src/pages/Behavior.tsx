@@ -102,16 +102,16 @@ const Behavior = () => {
         .order("started_at", { ascending: false });
       if (error) throw error;
       // Normalize shape to match what the UI expects
-      return (data ?? []).map((r: any) => ({
-        id: r.id,
-        student_id: r.student_id,
-        course_id: r.course_id,
-        week_number: r.week_number ?? 1,
-        action_type: (r.severity === "low") ? "negative" : "negative",
-        action_name: r.behavior_type,
-        score_change: r.severity === "critical" ? -20 : r.severity === "high" ? -10 : r.severity === "medium" ? -5 : -2,
-        notes: r.notes,
-        created_at: r.started_at,
+      return (data ?? []).map((record: any) => ({
+        id: record.id,
+        student_id: record.student_id,
+        course_id: record.course_id,
+        week_number: record.week_number ?? 1,
+        action_type: record.severity === "low" ? "positive" : "negative",
+        action_name: record.behavior_type,
+        score_change: record.severity === "critical" ? -20 : record.severity === "high" ? -10 : record.severity === "medium" ? -5 : -2,
+        notes: record.notes,
+        created_at: record.started_at,
       }));
     },
     enabled: !!selectedStudentId,

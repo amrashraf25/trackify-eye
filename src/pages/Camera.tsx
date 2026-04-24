@@ -449,7 +449,7 @@ const Camera = () => {
     fetch(`${LOCAL_API_URL}/rest/v1/courses`)
       .then(r => r.json())
       .then((d: any[]) => { if (Array.isArray(d)) setCourses(d); })
-      .catch(() => {});
+      .catch((err) => { console.error("Camera fetch error:", err); });
   }, []);
 
   // ── MJPEG key bump ───────────────────────────────────────────────
@@ -558,8 +558,9 @@ const Camera = () => {
           // Verify Python is still up before reconnecting
           fetch(`${BACKEND_URL}/health`)
             .then(r => { if (r.ok) connectSSE(); else throw new Error(); })
-            .catch(() => {
+            .catch((err) => {
               // Health check failed — stop retrying, mark fully disconnected
+              console.error("Camera fetch error:", err);
               reconnectAttempts.current = MAX_ATTEMPTS + 1;
               setIsReconnecting(false);
               setBackendConnected(false);
@@ -657,7 +658,7 @@ const Camera = () => {
       try {
         const d = await fetch(`${BACKEND_URL}/debug`);
         if (d.ok) setBackendDebug(await d.json());
-      } catch {}
+      } catch (err) { console.error("Camera fetch error:", err); }
 
       toast({
         title: "Camera Started",
@@ -672,7 +673,7 @@ const Camera = () => {
 
   // ── stop camera ──────────────────────────────────────────────────
   const stopCamera = useCallback(async () => {
-    try { await fetch(`${BACKEND_URL}/stop`, { method: "POST" }); } catch {}
+    try { await fetch(`${BACKEND_URL}/stop`, { method: "POST" }); } catch (err) { console.error("Camera fetch error:", err); }
     if (activeSessionId) {
       try {
         await fetch(`${LOCAL_API_URL}/api/session/end`, {
@@ -680,7 +681,7 @@ const Camera = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ session_id: activeSessionId }),
         });
-      } catch {}
+      } catch (err) { console.error("Camera fetch error:", err); }
       setActiveSessionId(null);
     }
     setBackendConnected(false);
@@ -701,7 +702,7 @@ const Camera = () => {
         if (d.ok) setBackendDebug(await d.json());
         toast({ title: "Students Reloaded", description: `${data.students_loaded} loaded` });
       }
-    } catch { toast({ title: "Reload Failed", variant: "destructive" }); }
+    } catch (err) { console.error("Camera fetch error:", err); toast({ title: "Reload Failed", variant: "destructive" }); }
     setIsReloading(false);
   }, [toast]);
 
@@ -710,7 +711,7 @@ const Camera = () => {
       await fetch(`${BACKEND_URL}/alerts/reset`, { method: "POST" });
       setAlertCounts({ fighting: 0, cheating: 0, sleeping: 0, phone: 0, talking: 0, drowsy: 0 });
       toast({ title: "Alerts Reset" });
-    } catch {}
+    } catch (err) { console.error("Camera fetch error:", err); }
   }, [toast]);
 
   const detectedCount   = backendStatus?.face_count ?? 0;
