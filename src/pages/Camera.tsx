@@ -186,7 +186,12 @@ function StudentRow({ rec }: { rec: AttendanceRecord }) {
     : "bg-red-500/15 text-red-400 border-red-500/30";
 
   return (
-    <div className="flex items-center gap-2.5 bg-secondary/20 border border-white/[0.04] rounded-xl px-3 py-2.5 hover:bg-secondary/30 transition-colors">
+    <div className="flex items-center gap-2 bg-secondary/20 border border-white/[0.04] rounded-xl px-3 py-2.5 hover:bg-secondary/30 transition-colors">
+      {(() => {
+        const score = rec.behavior_score ?? 100;
+        const dotColor = score >= 80 ? "bg-emerald-400 shadow-[0_0_6px_#22c55e]" : score >= 60 ? "bg-amber-400 shadow-[0_0_6px_#f59e0b]" : "bg-red-400 shadow-[0_0_6px_#ef4444]";
+        return <span className={`inline-block w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} title={`Behavior score: ${score}`} />;
+      })()}
       <div className={`w-8 h-8 rounded-full bg-secondary/60 border-2 ${ringCls} flex items-center justify-center text-xs font-bold text-foreground flex-shrink-0`}>
         {rec.full_name.charAt(0).toUpperCase()}
       </div>
@@ -219,12 +224,15 @@ function StudentRow({ rec }: { rec: AttendanceRecord }) {
 }
 
 /** Session info card shown in right panel */
-function SessionInfoCard({ session, streaming }: { session: ActiveSession; streaming: boolean }) {
+function SessionInfoCard({ session, streaming, elapsed = 0 }: { session: ActiveSession; streaming: boolean; elapsed?: number }) {
   const endAt = session.scheduled_end_at;
   const minsLeft = endAt
     ? Math.max(0, Math.round((new Date(endAt).getTime() - Date.now()) / 60000))
     : null;
   const timeWarnCls = minsLeft !== null && minsLeft < 10 ? "text-red-400" : "text-amber-400/80";
+  const scheduledSec = endAt
+    ? Math.max(60, Math.round((new Date(endAt).getTime() - new Date(session.started_at).getTime()) / 1000))
+    : 3600;
 
   return (
     <div className={`rounded-2xl p-4 border space-y-3 ${
@@ -281,6 +289,26 @@ function SessionInfoCard({ session, streaming }: { session: ActiveSession; strea
           </span>
         </div>
       </div>
+
+      {/* Session timeline bar — elapsed vs scheduled */}
+      {elapsed > 0 && (
+        <div className="mt-2">
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+            <span>Session Progress</span>
+            <span className="font-mono">{Math.min(100, Math.round((elapsed / scheduledSec) * 100))}%</span>
+          </div>
+          <div className="h-1.5 bg-secondary/40 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-1000 ${
+                elapsed < scheduledSec * 0.5 ? "bg-emerald-400 shadow-[0_0_6px_#22c55e80]" :
+                elapsed < scheduledSec * 0.92 ? "bg-amber-400 shadow-[0_0_6px_#f59e0b80]" :
+                "bg-red-400 shadow-[0_0_6px_#ef444480]"
+              }`}
+              style={{ width: `${Math.min(100, (elapsed / scheduledSec) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Attendance bar */}
       <div className="space-y-1.5">
@@ -1248,7 +1276,7 @@ const Camera = () => {
           {/* ── Session info card ── */}
           {selectedRoom && session && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <SessionInfoCard session={session} streaming={isStreaming} />
+              <SessionInfoCard session={session} streaming={isStreaming} elapsed={elapsed} />
             </motion.div>
           )}
 

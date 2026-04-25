@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import SendBehaviorAlert from "@/components/SendBehaviorAlert";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 const LOCAL_API = "http://localhost:3001";
 
@@ -50,6 +51,7 @@ const Behavior = () => {
   const [activeWeek, setActiveWeek] = useState<number>(1);
   const [recordWeek, setRecordWeek] = useState<string>("1");
   const [notes, setNotes] = useState("");
+  const [behaviorTypeFilter, setBehaviorTypeFilter] = useState<string>("all");
 
   const { data: students = [] } = useQuery({
     queryKey: ["behavior-students"],
@@ -109,6 +111,8 @@ const Behavior = () => {
         week_number: record.week_number ?? 1,
         action_type: record.severity === "low" ? "positive" : "negative",
         action_name: record.behavior_type,
+        behavior_type: record.behavior_type,
+        severity: record.severity,
         score_change: record.severity === "critical" ? -20 : record.severity === "high" ? -10 : record.severity === "medium" ? -5 : -2,
         notes: record.notes,
         created_at: record.started_at,
@@ -370,6 +374,71 @@ const Behavior = () => {
                 </div>
               </div>
 
+              {/* 16-week trend chart */}
+              {selectedStudentId && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="glass rounded-2xl border border-border/50 p-5"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center">
+                        <TrendingUp className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      16-Week Behavior Trend
+                    </h3>
+                    <span className="text-xs text-muted-foreground">Score over time</span>
+                  </div>
+                  {(() => {
+                    const weekScores: Record<number, { week: number; score: number; count: number }> = {};
+                    for (let w = 1; w <= 16; w++) weekScores[w] = { week: w, score: 100, count: 0 };
+                    let runningScore = 100;
+                    const sortedRecords = [...allRecords].sort((a: any, b: any) => (a.week_number ?? 1) - (b.week_number ?? 1));
+                    for (const r of sortedRecords) {
+                      const w = r.week_number ?? 1;
+                      const delta = r.severity === "critical" ? -20 : r.severity === "high" ? -10 : r.severity === "medium" ? -5 : -2;
+                      runningScore = Math.max(0, Math.min(100, runningScore + delta));
+                      weekScores[w] = { week: w, score: runningScore, count: weekScores[w].count + 1 };
+                    }
+                    let lastScore = 100;
+                    const chartData = Object.values(weekScores).map(w => {
+                      if (w.count > 0) lastScore = w.score;
+                      else w.score = lastScore;
+                      return { name: `W${w.week}`, score: w.score };
+                    });
+
+                    return (
+                      <ResponsiveContainer width="100%" height={200}>
+                        <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%"   stopColor="#22c55e" stopOpacity={0.4} />
+                              <stop offset="100%" stopColor="#22c55e" stopOpacity={0}   />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(225 20% 18%)" vertical={false} />
+                          <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#888" }} axisLine={false} tickLine={false} />
+                          <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#888" }} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(225 25% 8%)", border: "1px solid hsl(217 91% 60% / 0.3)", borderRadius: 8, fontSize: 12 }}
+                            labelStyle={{ color: "#60a5fa", fontWeight: 700 }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="score"
+                            stroke="#22c55e"
+                            strokeWidth={2.5}
+                            dot={{ r: 3, fill: "#22c55e" }}
+                            activeDot={{ r: 5, fill: "#22c55e" }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    );
+                  })()}
+                </motion.div>
+              )}
+
               {/* Week Navigation */}
               <div className="glass rounded-2xl p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -438,10 +507,32 @@ const Behavior = () => {
                   );
                 })()}
 
+                {/* Behavior type filter chips */}
+                {selectedStudentId && allRecords.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {(() => {
+                      const types = ["all", ...Array.from(new Set(allRecords.map((r: any) => r.behavior_type).filter(Boolean)))];
+                      return types.map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => setBehaviorTypeFilter(type)}
+                          className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all capitalize ${
+                            behaviorTypeFilter === type
+                              ? "bg-primary/20 text-primary border-primary/40 shadow-[0_0_8px_hsl(217_91%_60%_/_0.25)]"
+                              : "bg-secondary/30 text-muted-foreground border-white/[0.06] hover:bg-secondary/50 hover:text-foreground"
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ));
+                    })()}
+                  </div>
+                )}
+
                 {/* Week Records */}
                 <div className="space-y-2 max-h-[300px] overflow-y-auto">
                   <AnimatePresence mode="wait">
-                    {activeWeekRecords.length === 0 ? (
+                    {(behaviorTypeFilter === "all" ? activeWeekRecords : activeWeekRecords.filter((r: any) => r.behavior_type === behaviorTypeFilter)).length === 0 ? (
                       <motion.div
                         key="empty"
                         initial={{ opacity: 0 }}
@@ -453,7 +544,7 @@ const Behavior = () => {
                         <p className="text-sm">No behavior records for Week {activeWeek}</p>
                       </motion.div>
                     ) : (
-                      activeWeekRecords.map((record, i) => (
+                      (behaviorTypeFilter === "all" ? activeWeekRecords : activeWeekRecords.filter((r: any) => r.behavior_type === behaviorTypeFilter)).map((record, i) => (
                         <motion.div
                           key={record.id}
                           initial={{ opacity: 0, y: 10 }}
@@ -471,7 +562,25 @@ const Behavior = () => {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground capitalize">{record.action_name?.replace(/_/g, " ")}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium text-foreground capitalize">{record.action_name?.replace(/_/g, " ")}</p>
+                              {record.severity && (
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
+                                  record.severity === "critical" ? "bg-red-500/15 text-red-400 border-red-500/30" :
+                                  record.severity === "high"     ? "bg-orange-500/15 text-orange-400 border-orange-500/30" :
+                                  record.severity === "medium"   ? "bg-amber-500/15 text-amber-400 border-amber-500/30" :
+                                  "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                                }`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${
+                                    record.severity === "critical" ? "bg-red-400 animate-pulse" :
+                                    record.severity === "high"     ? "bg-orange-400" :
+                                    record.severity === "medium"   ? "bg-amber-400" :
+                                    "bg-blue-400"
+                                  }`} />
+                                  {record.severity}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-muted-foreground">
                               <span className={record.score_change > 0 ? "text-emerald-500" : "text-destructive"}>
                                 {record.score_change > 0 ? "+" : ""}{record.score_change}pts

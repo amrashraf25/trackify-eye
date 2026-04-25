@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MetricCard from "@/components/dashboard/MetricCard";
-import { BookOpen, Users, ClipboardCheck, AlertTriangle, GraduationCap, ArrowRight, TrendingDown, Camera, CalendarDays, ShieldAlert, ChevronRight, Activity, Play } from "lucide-react";
+import { BookOpen, Users, ClipboardCheck, AlertTriangle, GraduationCap, ArrowRight, TrendingDown, CalendarDays, ShieldAlert, ChevronRight, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -144,8 +144,8 @@ const DoctorDashboard = () => {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { icon: Play, label: "Start Session", color: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/25 text-emerald-400", path: "/sessions" },
-              { icon: Camera, label: "View Camera", color: "from-primary/20 to-primary/5 border-primary/25 text-primary", path: "/camera" },
+              { icon: ClipboardCheck, label: "Mark Attendance", color: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/25 text-emerald-400", path: "/attendance" },
+              { icon: Users, label: "My Students", color: "from-primary/20 to-primary/5 border-primary/25 text-primary", path: "/students" },
               { icon: ShieldAlert, label: "Check Alerts", color: "from-red-500/20 to-red-500/5 border-red-500/25 text-red-400", path: "/alerts" },
               { icon: CalendarDays, label: "My Schedule", color: "from-violet-500/20 to-violet-500/5 border-violet-500/25 text-violet-400", path: "/sessions" },
             ].map((action, i) => (

@@ -298,6 +298,37 @@ const StudentDashboard = () => {
           </div>
         </motion.div>
 
+        {/* --------------- QUICK ACTIONS --------------- */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { icon: ClipboardCheck, label: "My Attendance", color: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/25 text-emerald-400", path: "/attendance" },
+              { icon: Award, label: "My Grades", color: "from-amber-500/20 to-amber-500/5 border-amber-500/25 text-amber-400", path: "/courses" },
+              { icon: BookOpen, label: "My Courses", color: "from-primary/20 to-primary/5 border-primary/25 text-primary", path: "/courses" },
+              { icon: Bell, label: "Notifications", color: "from-violet-500/20 to-violet-500/5 border-violet-500/25 text-violet-400", path: "/alerts" },
+            ].map((action, i) => (
+              <motion.a
+                key={action.label}
+                href={action.path}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 + i * 0.05 }}
+                whileHover={{ y: -3, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`tilt-3d quick-action relative overflow-hidden rounded-2xl bg-gradient-to-b ${action.color} border p-4 text-left no-underline block`}
+              >
+                <action.icon className="w-5 h-5 mb-2" />
+                <p className="text-sm font-bold text-foreground">{action.label}</p>
+                <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/30" />
+              </motion.a>
+            ))}
+          </div>
+        </motion.div>
+
         {/* --------------- MAIN GRID --------------- */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
