@@ -1,0 +1,27 @@
+# ── SUPABASE CONFIG ─────────────────
+SUPABASE_URL = "http://localhost:3001"
+SUPABASE_KEY = "local-anon-key"
+
+SUPABASE_HEADERS = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": f"Bearer {SUPABASE_KEY}",
+}
+
+# ── API ─────────────────────────────
+LOCAL_API_URL = "http://localhost:3001"
+
+# ── COOLDOWNS ───────────────────────
+ATTENDANCE_COOLDOWN = 60
+BEHAVIOR_COOLDOWN = 30
+
+# ── BEHAVIOR MAP ────────────────────
+BEHAVIOR_TYPE_MAP = {
+    "Cheating": "cheating",
+    "Talking": "talking",
+    "Sleeping": "sleeping",
+    "Drowsy": "drowsy",
+    "Fighting": "fighting",
+    "Phone": "phone",
+    "Drinking": "drinking",
+    "Eating": "eating",
+}
