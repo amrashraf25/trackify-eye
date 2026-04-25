@@ -170,15 +170,91 @@ const StudentDashboard = () => {
   };
 
   if (!student) {
+    const fallbackName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Student";
+    const fallbackInitials = fallbackName.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
     return (
       <MainLayout title="My Dashboard">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20 gap-4">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/30 to-accent/20 flex items-center justify-center shadow-glow-primary">
-            <GraduationCap className="w-10 h-10 text-primary" />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground">Welcome, {user?.user_metadata?.full_name || "Student"}</h2>
-          <p className="text-muted-foreground text-sm">Your student profile is not linked yet. Please contact your admin.</p>
-        </motion.div>
+        <div className="space-y-5">
+          {/* Hero — friendly setup state */}
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, type: "spring", stiffness: 180, damping: 20 }}
+            className="relative overflow-hidden rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-gradient-to-br from-slate-50 via-blue-50/50 to-slate-100 dark:from-[hsl(228,35%,8%)] dark:via-[hsl(225,30%,6%)] dark:to-[hsl(230,35%,7%)]"
+          >
+            <div className="absolute inset-0 pointer-events-none opacity-10 dark:opacity-30" style={{
+              backgroundImage: "linear-gradient(hsl(217 91% 60% / 0.07) 1px, transparent 1px), linear-gradient(90deg, hsl(217 91% 60% / 0.07) 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+            }} />
+            <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-primary/12 blur-[80px] pointer-events-none" />
+            <div className="absolute -bottom-12 -left-12  w-56 h-56 rounded-full bg-accent/10  blur-[70px] pointer-events-none" />
+
+            <div className="relative z-10 p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+              <div className="float-3d w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/40 to-accent/30 flex items-center justify-center shadow-[0_0_30px_hsl(217_91%_60%/0.35)] flex-shrink-0">
+                <GraduationCap className="w-10 h-10 text-white drop-shadow-[0_0_8px_hsl(217_91%_60%)]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] uppercase tracking-[0.15em] text-amber-400/90 font-bold">Profile Setup Required</span>
+                <h2 className="text-2xl sm:text-[2rem] font-black text-foreground tracking-tight mt-1">
+                  Welcome, <span className="gradient-text">{fallbackName}</span>
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                  Your account is signed in but not yet linked to a student record. Once your admin links it, you'll see your courses, grades, attendance, and behavior score here.
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                    <AlertTriangle className="w-3 h-3" /> Awaiting admin link
+                  </span>
+                  <span className="text-[11px] text-muted-foreground font-mono">{user?.email}</span>
+                </div>
+              </div>
+              <div className="hidden sm:flex w-16 h-16 rounded-2xl items-center justify-center text-xl font-black text-white shadow-[0_0_24px_hsl(217_91%_60%/0.35)] flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, hsl(217 91% 60% / 0.5), hsl(263 70% 58% / 0.4))", border: "1px solid hsl(217 91% 60% / 0.3)" }}>
+                {fallbackInitials}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Quick actions still work — accessible to any student */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { icon: ClipboardCheck, label: "Attendance",  color: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/25 text-emerald-400", path: "/attendance"  },
+                { icon: Award,          label: "Grades",      color: "from-amber-500/20 to-amber-500/5 border-amber-500/25 text-amber-400",         path: "/courses"     },
+                { icon: BookOpen,       label: "Courses",     color: "from-primary/20 to-primary/5 border-primary/25 text-primary",                  path: "/courses"     },
+                { icon: Bell,           label: "Notifications",color: "from-violet-500/20 to-violet-500/5 border-violet-500/25 text-violet-400",      path: "/alerts"      },
+              ].map((action, i) => (
+                <motion.a key={action.label} href={action.path}
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.05 }}
+                  whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  className={`tilt-3d quick-action relative overflow-hidden rounded-2xl bg-gradient-to-b ${action.color} border p-4 text-left no-underline block`}>
+                  <action.icon className="w-5 h-5 mb-2" />
+                  <p className="text-sm font-bold text-foreground">{action.label}</p>
+                  <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/30" />
+                </motion.a>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* What's next help card */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="glass rounded-2xl border border-border/50 p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center">
+                <Shield className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">What you can do now</h3>
+                <p className="text-[11px] text-muted-foreground">While we wait for an admin to link your profile</p>
+              </div>
+            </div>
+            <ul className="space-y-2 text-xs text-muted-foreground">
+              <li className="flex items-start gap-2"><Star className="w-3 h-3 text-amber-400 mt-0.5 flex-shrink-0" /> Browse available <strong className="text-foreground">courses</strong> from the sidebar</li>
+              <li className="flex items-start gap-2"><Bell className="w-3 h-3 text-violet-400 mt-0.5 flex-shrink-0" /> Check your <strong className="text-foreground">notifications</strong> for updates from staff</li>
+              <li className="flex items-start gap-2"><GraduationCap className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" /> Once linked, your grades, attendance and behavior score will appear automatically — no refresh needed</li>
+            </ul>
+          </motion.div>
+        </div>
       </MainLayout>
     );
   }
