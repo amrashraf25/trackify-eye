@@ -227,7 +227,7 @@ const StudentDashboard = () => {
                 <motion.a key={action.label} href={action.path}
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.05 }}
                   whileHover={{ y: -3, scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  className={`tilt-3d quick-action relative overflow-hidden rounded-2xl bg-gradient-to-b ${action.color} border p-4 text-left no-underline block`}>
+                  className={`tilt-3d halo-3d quick-action relative overflow-hidden rounded-2xl bg-gradient-to-b ${action.color} border p-4 text-left no-underline block`}>
                   <action.icon className="w-5 h-5 mb-2" />
                   <p className="text-sm font-bold text-foreground">{action.label}</p>
                   <ChevronRight className="absolute top-4 right-3 w-4 h-4 text-muted-foreground/30" />
@@ -395,7 +395,7 @@ const StudentDashboard = () => {
                 transition={{ delay: 0.2 + i * 0.05 }}
                 whileHover={{ y: -3, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className={`tilt-3d quick-action relative overflow-hidden rounded-2xl bg-gradient-to-b ${action.color} border p-4 text-left no-underline block`}
+                className={`tilt-3d halo-3d quick-action relative overflow-hidden rounded-2xl bg-gradient-to-b ${action.color} border p-4 text-left no-underline block`}
               >
                 <action.icon className="w-5 h-5 mb-2" />
                 <p className="text-sm font-bold text-foreground">{action.label}</p>

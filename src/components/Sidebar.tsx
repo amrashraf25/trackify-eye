@@ -46,6 +46,9 @@ const Sidebar = () => {
     <aside className="w-64 min-h-screen flex flex-col border-r relative overflow-hidden transition-colors duration-300"
       style={{ background: "hsl(var(--sidebar-bg))", borderColor: "hsl(var(--sidebar-border))" }}>
 
+      {/* -- Top gradient bleed -- */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-primary/8 via-primary/3 to-transparent pointer-events-none" />
+
       {/* -- Dot grid pattern -- */}
       <div className="absolute inset-0 pointer-events-none" style={{
         backgroundImage: "radial-gradient(circle, hsl(217 91% 60% / 0.06) 1px, transparent 1px)",
@@ -61,11 +64,11 @@ const Sidebar = () => {
       {/* ------------------ LOGO ------------------ */}
       <div className="px-5 pt-6 pb-5 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="relative flex-shrink-0">
+          <div className="relative flex-shrink-0 halo-3d">
             {/* Glow halo */}
             <div className="absolute inset-0 rounded-xl bg-primary/25 blur-lg scale-150 pointer-events-none" />
             <div className="relative w-11 h-11 rounded-xl bg-gradient-to-br from-primary/50 to-accent/35 flex items-center justify-center shadow-[0_0_24px_hsl(6_63%_50%/0.4),inset_0_1px_0_hsl(0_0%_100%/0.15)]">
-              <img src={owlMascot} alt="Trackify" className="w-7 h-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
+              <img src={owlMascot} alt="Trackify" className="w-7 h-7 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)] float-3d" />
             </div>
             {/* Online dot */}
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white dark:border-[hsl(217_52%_5%)] shadow-[0_0_8px_#4ade8090] animate-pulse" />

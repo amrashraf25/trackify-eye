@@ -46,7 +46,7 @@ export function PageHeader({
       <div className="relative z-10 p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl ${glowColor} border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center shadow-lg`}>
+            <div className={`halo-3d float-3d w-12 h-12 rounded-xl ${glowColor} border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center shadow-lg`}>
               <Icon className={`w-6 h-6 ${iconColor}`} />
             </div>
             <div>

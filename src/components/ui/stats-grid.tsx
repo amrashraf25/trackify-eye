@@ -38,7 +38,7 @@ export function StatsGrid({ items, columns = 4 }: { items: StatItem[]; columns?:
             transition={{ delay: 0.08 + i * 0.06, type: "spring", stiffness: 300, damping: 24 }}
             whileHover={{ y: -3, scale: 1.02, transition: { duration: 0.15 } }}
             onClick={item.onClick}
-            className={`relative overflow-hidden rounded-2xl bg-gradient-to-b ${c.bg} ${c.border} border p-4 ${item.onClick ? "cursor-pointer" : ""}`}
+            className={`tilt-3d transition-all duration-300 relative overflow-hidden rounded-2xl bg-gradient-to-b ${c.bg} ${c.border} border p-4 ${item.onClick ? "cursor-pointer" : ""}`}
             style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.04)" }}
           >
             <div className="flex items-start justify-between mb-3">

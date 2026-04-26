@@ -181,7 +181,7 @@ const Header = ({ title }: HeaderProps) => {
           variant="ghost"
           size="icon"
           onClick={toggleTheme}
-          className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-xl transition-all"
+          className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-xl transition-transform hover:rotate-12 active:rotate-90"
         >
           {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </Button>
@@ -192,12 +192,12 @@ const Header = ({ title }: HeaderProps) => {
             <Button
               variant="ghost"
               size="icon"
-              className="relative rounded-xl hover:bg-secondary/80"
+              className="relative rounded-xl hover:bg-secondary/80 halo-3d"
               onClick={() => setShowNotifs(!showNotifs)}
             >
               <Bell className="w-4 h-4 text-muted-foreground" />
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1 pulse-ring">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1 pulse-ring animate-pulse">
                   {unreadCount}
                 </span>
               )}
@@ -352,7 +352,7 @@ const Header = ({ title }: HeaderProps) => {
               </Badge>
             )}
           </div>
-          <Avatar className="w-9 h-9 rounded-xl border border-primary/20">
+          <Avatar className="w-9 h-9 rounded-xl border border-primary/20 tilt-3d">
             <AvatarImage src={avatarUrl || undefined} className="object-cover rounded-xl" />
             <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 text-primary text-xs font-bold">
               {user?.user_metadata?.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || <User className="w-4 h-4" />}

@@ -271,7 +271,7 @@ const Auth = () => {
               <img
                 src={owlMascot}
                 alt="Trackify Owl"
-                className="w-40 h-40 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)]"
+                className="w-40 h-40 object-contain drop-shadow-[0_10px_30px_hsl(217_91%_60%/0.3)] float-3d"
               />
               {/* Red glow behind owl on error */}
               {errorFlash && (
@@ -311,7 +311,7 @@ const Auth = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="glass border-border/50 shadow-glow-primary/50">
+          <Card className="glass border-border/50 shadow-glow-primary/50 flip-in-3d">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-lg font-bold text-foreground">Welcome Back</CardTitle>
               <CardDescription className="text-muted-foreground text-xs">
@@ -350,7 +350,7 @@ const Auth = () => {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity font-semibold" disabled={loading || isAnimating}>
+                <Button type="submit" className="w-full rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90 font-semibold transition-all hover:shadow-[0_8px_30px_hsl(217_91%_60%/0.4)]" disabled={loading || isAnimating}>
                   {loading && !isAnimating ? (
                     <span className="flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />

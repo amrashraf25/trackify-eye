@@ -157,7 +157,7 @@ const DoctorDashboard = () => {
                 whileHover={{ y: -2, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => navigate(action.path)}
-                className={`quick-action relative overflow-hidden rounded-2xl bg-gradient-to-b ${action.color} border p-4 text-left`}
+                className={`tilt-3d halo-3d quick-action relative overflow-hidden rounded-2xl bg-gradient-to-b ${action.color} border p-4 text-left`}
               >
                 <action.icon className="w-5 h-5 mb-2" />
                 <p className="text-sm font-bold text-foreground">{action.label}</p>

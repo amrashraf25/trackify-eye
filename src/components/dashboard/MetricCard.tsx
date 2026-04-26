@@ -92,8 +92,11 @@ const MetricCard = ({ title, value, icon: Icon, trend, color = "primary", index 
       transition={{ delay: index * 0.08, duration: 0.45, type: "spring", stiffness: 260, damping: 20 }}
       whileHover={{ y: -2 }}
       onClick={() => linkTo && navigate(linkTo)}
-      className={`glass rounded-2xl p-5 border ${styles.border} ${styles.glow} transition-all duration-300 relative overflow-hidden ${linkTo ? "cursor-pointer" : "cursor-default"}`}
+      className={`tilt-3d glass rounded-2xl p-5 border ${styles.border} ${styles.glow} transition-all duration-300 relative overflow-hidden ${linkTo ? "cursor-pointer" : "cursor-default"}`}
     >
+      {/* Top gradient accent bar */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-cyan-400 rounded-t-2xl opacity-70" />
+
       {/* Subtle accent gradient top */}
       <div className={`absolute top-0 left-0 right-0 h-24 bg-gradient-to-b ${styles.accent} pointer-events-none`} />
 
@@ -116,7 +119,7 @@ const MetricCard = ({ title, value, icon: Icon, trend, color = "primary", index 
           )}
         </div>
 
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${styles.icon}`}>
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 hover:scale-110 shadow-[0_0_20px_hsl(217_91%_60%/0.25)] ${styles.icon}`}>
           <Icon className="w-5 h-5" />
         </div>
       </div>

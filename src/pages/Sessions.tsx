@@ -228,9 +228,9 @@ function SessionCard({ session, canEdit, isStudent }: { session: Session; canEdi
     : null;
 
   return (
-    <div className={`glass rounded-2xl border transition-all ${
+    <div className={`tilt-3d depth-card glass rounded-2xl border transition-all ${
       session.status === "active"
-        ? "border-primary/30 shadow-[0_0_20px_hsl(217_91%_60%/0.08)]"
+        ? "halo-3d animate-pulse border-primary/30 shadow-[0_0_20px_hsl(217_91%_60%/0.08)]"
         : "border-white/[0.06]"
     }`}>
       {/* ── Card header ── */}
