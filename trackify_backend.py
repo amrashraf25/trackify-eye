@@ -804,13 +804,13 @@ class FastFaceRecognition:
     # Higher = fewer false positives but lower recall. Values tuned per class mAP.
     CUSTOM_MIN_CONF = {
         'person':    0.30,
-        'phone_use': 0.30,   # Model has low mAP — need low threshold to catch phones
-        'sleeping':  0.40,
-        'cheating':  0.45,   # Balanced — still filters noise but catches real cheating
-        'fighting':  0.55,
-        'talking':   0.40,
-        'eating':    0.35,
-        'drinking':  0.35,
+        'phone_use': 0.18,   # Lowered: model has low mAP for phones — tuned for higher recall
+        'sleeping':  0.35,
+        'cheating':  0.40,
+        'fighting':  0.50,
+        'talking':   0.35,
+        'eating':    0.30,
+        'drinking':  0.30,
     }
 
     # Runs the active YOLO model on a single frame and returns filtered detections.
@@ -877,10 +877,10 @@ class FastFaceRecognition:
             }
             # Minimum consecutive frames before reporting (prevents single-frame spam)
             FRAME_THRESH = {
-                'phone_use': 3,
+                'phone_use': 2,   # Lowered to fire faster on phones
                 'sleeping':  3,
-                'cheating':  5,   # Need 5 frames — catches real cheating, filters glances
-                'fighting':  4,   # Need 4 frames
+                'cheating':  4,
+                'fighting':  4,
             }
 
             x1, y1, x2, y2 = face_data['rect']
@@ -891,12 +891,21 @@ class FastFaceRecognition:
                 if label not in CUSTOM_MAP:
                     continue
                 bx1, by1, bx2, by2 = obj['bbox']
-                # Expand face bbox to catch body-level detections
-                expand_y = (y2 - y1) * 2
-                ey1 = max(0, y1 - int(expand_y * 0.3))
-                ey2 = y2 + int(expand_y)
-                ex1 = max(0, x1 - int((x2 - x1) * 0.5))
-                ex2 = x2 + int((x2 - x1) * 0.5)
+                fw = (x2 - x1)
+                fh = (y2 - y1)
+                # Expand face bbox to catch body-level detections.
+                # Phones are usually held in front/below the face — be generous downward and laterally.
+                if label == 'phone_use':
+                    ey1 = max(0, y1 - int(fh * 1.0))
+                    ey2 = y2 + int(fh * 4.0)
+                    ex1 = max(0, x1 - int(fw * 1.5))
+                    ex2 = x2 + int(fw * 1.5)
+                else:
+                    expand_y = fh * 2
+                    ey1 = max(0, y1 - int(expand_y * 0.3))
+                    ey2 = y2 + int(expand_y)
+                    ex1 = max(0, x1 - int(fw * 0.5))
+                    ex2 = x2 + int(fw * 0.5)
 
                 if bx2 < ex1 or bx1 > ex2 or by2 < ey1 or by1 > ey2:
                     continue
