@@ -1,5 +1,11 @@
 import { useEffect, useRef } from "react";
 
+// 3D ambient backdrop tuned for the Trackify Eye identity:
+//   • Perspective floor grid that recedes into the horizon (camera viewport feel)
+//   • Pseudo-3D star field with z-depth parallax (sized + dimmed by depth)
+//   • Slow scanning beam — the AI "looking"
+//   • Centered iris pulse — the eye
+//   • A few drifting neon orbs for ambient color
 const AnimatedBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -12,126 +18,151 @@ const AnimatedBackground = () => {
     let animationId: number;
     let time = 0;
 
-    const particles: {
-      x: number; y: number; vx: number; vy: number;
-      size: number; opacity: number; color: string; pulse: number; pulseSpeed: number;
-    }[] = [];
-    const particleCount = 80;
+    const STAR_COUNT = 110;
+    type Star = { x: number; y: number; z: number; baseSize: number; color: string };
+    const stars: Star[] = [];
 
-    const colors = [
-      "217 91% 60%",  // neon blue
-      "263 70% 58%",  // neon purple
-      "187 92% 69%",  // neon cyan
+    const COLORS = [
+      "217 91% 60%",  // primary blue
+      "263 70% 58%",  // accent purple
+      "187 92% 69%",  // cyan
     ];
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width  = canvas.offsetWidth  * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener("resize", resize);
 
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * canvas.offsetWidth,
-        y: Math.random() * canvas.offsetHeight,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        size: Math.random() * 2.5 + 0.5,
-        opacity: Math.random() * 0.5 + 0.1,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        pulse: Math.random() * Math.PI * 2,
-        pulseSpeed: 0.01 + Math.random() * 0.02,
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({
+        x: (Math.random() - 0.5) * 2,    // -1 .. 1 (normalized)
+        y: (Math.random() - 0.5) * 2,
+        z: Math.random() * 0.95 + 0.05,  // 0 (far) .. 1 (near)
+        baseSize: 0.6 + Math.random() * 1.6,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
       });
     }
 
     const animate = () => {
-      time += 0.005;
+      time += 0.006;
       const w = canvas.offsetWidth;
       const h = canvas.offsetHeight;
+      const cx = w * 0.5;
+      const cy = h * 0.5;
+
       ctx.clearRect(0, 0, w, h);
 
-      // Animated grid with slow drift
-      const gridSize = 60;
-      const gridOffset = (time * 8) % gridSize;
-      ctx.lineWidth = 0.5;
+      // ── 1. Vignette base wash ──────────────────────────────────────
+      const wash = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.7);
+      wash.addColorStop(0, "hsl(217 91% 60% / 0.04)");
+      wash.addColorStop(1, "hsl(263 70% 58% / 0)");
+      ctx.fillStyle = wash;
+      ctx.fillRect(0, 0, w, h);
 
-      for (let x = -gridSize + gridOffset; x < w + gridSize; x += gridSize) {
-        const wave = Math.sin(time + x * 0.003) * 3;
+      // ── 2. Perspective floor grid ──────────────────────────────────
+      // Lines that converge to a horizon at 55% height — gives the page
+      // a 3D depth anchor reminiscent of an AI viewport.
+      const horizonY = h * 0.55;
+      const drift = (time * 24) % 80;
+      ctx.lineWidth = 1;
+
+      // Vertical lines fanning out from the vanishing point
+      for (let i = -10; i <= 10; i++) {
+        const xBottom = cx + (i / 10) * w * 1.2;
+        const grad = ctx.createLinearGradient(cx, horizonY, xBottom, h);
+        grad.addColorStop(0, "hsl(217 91% 60% / 0)");
+        grad.addColorStop(1, "hsl(217 91% 60% / 0.10)");
+        ctx.strokeStyle = grad;
         ctx.beginPath();
-        ctx.moveTo(x + wave, 0);
-        ctx.lineTo(x - wave, h);
-        ctx.strokeStyle = `hsl(217 91% 60% / 0.025)`;
+        ctx.moveTo(cx, horizonY);
+        ctx.lineTo(xBottom, h);
         ctx.stroke();
       }
-      for (let y = -gridSize + gridOffset; y < h + gridSize; y += gridSize) {
-        const wave = Math.cos(time + y * 0.003) * 3;
+
+      // Horizontal scan rows that recede toward horizon, animated drift
+      for (let i = 0; i < 14; i++) {
+        const t = (i / 14) + drift / 1000;
+        const yPos = horizonY + Math.pow(t, 1.6) * (h - horizonY);
+        if (yPos > h) continue;
+        const alpha = 0.04 + (yPos - horizonY) / (h - horizonY) * 0.10;
+        ctx.strokeStyle = `hsl(263 70% 58% / ${alpha})`;
         ctx.beginPath();
-        ctx.moveTo(0, y + wave);
-        ctx.lineTo(w, y - wave);
-        ctx.strokeStyle = `hsl(263 70% 58% / 0.02)`;
+        ctx.moveTo(0, yPos);
+        ctx.lineTo(w, yPos);
         ctx.stroke();
       }
 
-      // Ambient orbs (large soft glows)
+      // ── 3. 3D star field (depth parallax) ──────────────────────────
+      stars.forEach((s) => {
+        // Slow rotation around camera Z axis for depth movement
+        s.z -= 0.0007;
+        if (s.z <= 0.02) {
+          s.z = 1;
+          s.x = (Math.random() - 0.5) * 2;
+          s.y = (Math.random() - 0.5) * 2;
+        }
+        // Project onto screen — closer (lower z) = farther from center
+        const px = cx + (s.x / s.z) * w * 0.4;
+        const py = cy + (s.y / s.z) * h * 0.4;
+        if (px < -50 || px > w + 50 || py < -50 || py > h + 50) return;
+
+        const size  = s.baseSize * (1 / s.z) * 0.55;
+        const alpha = (1 - s.z) * 0.55;
+
+        const glow = ctx.createRadialGradient(px, py, 0, px, py, size * 4);
+        glow.addColorStop(0, `hsl(${s.color} / ${alpha * 0.5})`);
+        glow.addColorStop(1, `hsl(${s.color} / 0)`);
+        ctx.fillStyle = glow;
+        ctx.fillRect(px - size * 4, py - size * 4, size * 8, size * 8);
+
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${s.color} / ${alpha})`;
+        ctx.fill();
+      });
+
+      // ── 4. Drifting ambient orbs ───────────────────────────────────
       const orbs = [
-        { x: w * 0.2, y: h * 0.3, r: 250, color: "217 91% 60%", phase: 0 },
-        { x: w * 0.8, y: h * 0.6, r: 200, color: "263 70% 58%", phase: 2 },
-        { x: w * 0.5, y: h * 0.8, r: 180, color: "187 92% 69%", phase: 4 },
+        { x: w * 0.18, y: h * 0.28, r: 280, color: "217 91% 60%", phase: 0 },
+        { x: w * 0.82, y: h * 0.62, r: 240, color: "263 70% 58%", phase: 2.1 },
+        { x: w * 0.55, y: h * 0.85, r: 200, color: "187 92% 69%", phase: 4.2 },
       ];
-
       orbs.forEach((orb) => {
-        const ox = orb.x + Math.sin(time + orb.phase) * 40;
-        const oy = orb.y + Math.cos(time * 0.7 + orb.phase) * 30;
-        const opacity = 0.04 + Math.sin(time * 0.5 + orb.phase) * 0.02;
-        const gradient = ctx.createRadialGradient(ox, oy, 0, ox, oy, orb.r);
-        gradient.addColorStop(0, `hsl(${orb.color} / ${opacity})`);
-        gradient.addColorStop(1, `hsl(${orb.color} / 0)`);
-        ctx.fillStyle = gradient;
+        const ox = orb.x + Math.sin(time + orb.phase) * 50;
+        const oy = orb.y + Math.cos(time * 0.7 + orb.phase) * 35;
+        const o  = 0.05 + Math.sin(time * 0.5 + orb.phase) * 0.025;
+        const g  = ctx.createRadialGradient(ox, oy, 0, ox, oy, orb.r);
+        g.addColorStop(0, `hsl(${orb.color} / ${o})`);
+        g.addColorStop(1, `hsl(${orb.color} / 0)`);
+        ctx.fillStyle = g;
         ctx.fillRect(ox - orb.r, oy - orb.r, orb.r * 2, orb.r * 2);
       });
 
-      // Particles
-      particles.forEach((p, i) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.pulse += p.pulseSpeed;
-        if (p.x < 0 || p.x > w) p.vx *= -1;
-        if (p.y < 0 || p.y > h) p.vy *= -1;
-
-        const pulseFactor = 0.5 + Math.sin(p.pulse) * 0.5;
-        const currentOpacity = p.opacity * (0.6 + pulseFactor * 0.4);
-
-        // Glow around particle
-        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
-        glow.addColorStop(0, `hsl(${p.color} / ${currentOpacity * 0.3})`);
-        glow.addColorStop(1, `hsl(${p.color} / 0)`);
-        ctx.fillStyle = glow;
-        ctx.fillRect(p.x - p.size * 4, p.y - p.size * 4, p.size * 8, p.size * 8);
-
-        // Core particle
+      // ── 5. Iris pulse — the "eye" of Trackify Eye ──────────────────
+      // Concentric rings expanding outward from the centre, faint but cool.
+      for (let r = 0; r < 4; r++) {
+        const phase = (time * 0.4 + r * 0.4) % 1;
+        const radius = phase * Math.min(w, h) * 0.45;
+        const alpha = (1 - phase) * 0.10;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size * (0.8 + pulseFactor * 0.2), 0, Math.PI * 2);
-        ctx.fillStyle = `hsl(${p.color} / ${currentOpacity})`;
-        ctx.fill();
+        ctx.arc(cx, cy * 0.45, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsl(187 92% 69% / ${alpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
 
-        // Connect nearby particles with gradient lines
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = p.x - particles[j].x;
-          const dy = p.y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 140) {
-            const lineOpacity = 0.08 * (1 - dist / 140);
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `hsl(${p.color} / ${lineOpacity})`;
-            ctx.lineWidth = 0.6;
-            ctx.stroke();
-          }
-        }
-      });
+      // ── 6. Slow scanning beam (AI is watching) ─────────────────────
+      const beamY = ((time * 0.12) % 1) * h;
+      const beamGrad = ctx.createLinearGradient(0, beamY - 80, 0, beamY + 80);
+      beamGrad.addColorStop(0,    "hsl(217 91% 60% / 0)");
+      beamGrad.addColorStop(0.5,  "hsl(217 91% 60% / 0.05)");
+      beamGrad.addColorStop(1,    "hsl(217 91% 60% / 0)");
+      ctx.fillStyle = beamGrad;
+      ctx.fillRect(0, beamY - 80, w, 160);
 
       animationId = requestAnimationFrame(animate);
     };
@@ -147,7 +178,7 @@ const AnimatedBackground = () => {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ opacity: 0.7 }}
+      style={{ opacity: 0.85 }}
     />
   );
 };
