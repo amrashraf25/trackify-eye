@@ -2,7 +2,8 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2, Calendar, ChevronLeft, ChevronRight, XCircle, UserPlus, Pencil, RotateCcw, GraduationCap, Shield, TrendingUp, TrendingDown, Sparkles, Activity } from "lucide-react";
+import { Search, User, BookOpen, Plus, Upload, Lock, Mail, Phone, Hash, Trash2, Calendar, ChevronLeft, ChevronRight, XCircle, UserPlus, Pencil, RotateCcw, GraduationCap, Shield, TrendingUp, TrendingDown, Sparkles, Activity, Download } from "lucide-react";
+import { exportToCsv } from "@/lib/csv";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -434,6 +435,27 @@ const Students = () => {
                   <p className="text-[9px] text-muted-foreground uppercase tracking-widest mt-1">{label}</p>
                 </div>
               ))}
+              <Button
+                variant="outline"
+                onClick={() => exportToCsv(
+                  "students",
+                  filteredStudents,
+                  [
+                    { header: "Code", accessor: (s: any) => s.student_code },
+                    { header: "Name", accessor: (s: any) => s.full_name },
+                    { header: "Email", accessor: (s: any) => s.email ?? "" },
+                    { header: "Phone", accessor: (s: any) => s.phone ?? "" },
+                    { header: "Year", accessor: (s: any) => s.year_level },
+                    { header: "Status", accessor: (s: any) => s.status },
+                    { header: "Courses", accessor: (s: any) => getStudentCourses(s.id).map((c: any) => c.course_code).join("; ") },
+                    { header: "Behavior Score", accessor: (s: any) => getOverallScore(s.id) },
+                  ],
+                )}
+                className="rounded-xl h-12 px-4 border-border/50 hover:border-primary/50 hover:bg-primary/10 gap-2"
+              >
+                <Download className="w-4 h-4" />
+                <span className="text-sm font-semibold">Export CSV</span>
+              </Button>
               {canManage && (
                 <Dialog open={addOpen} onOpenChange={setAddOpen}>
                   <DialogTrigger asChild>

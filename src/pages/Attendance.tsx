@@ -3,7 +3,9 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, CheckCircle, XCircle, Clock, Users, Stethoscope, BrainCircuit, ClipboardCheck } from "lucide-react";
+import { Search, CheckCircle, XCircle, Clock, Users, Stethoscope, BrainCircuit, ClipboardCheck, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { exportToCsv } from "@/lib/csv";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -234,6 +236,87 @@ const Attendance = () => {
               className={`h-full rounded-full ${attendanceRate >= 80 ? "bg-emerald-500" : attendanceRate >= 60 ? "bg-amber-500" : "bg-red-500"}`}
               style={{ boxShadow: attendanceRate >= 80 ? "0 0 8px #22c55e60" : attendanceRate >= 60 ? "0 0 8px #f59e0b60" : "0 0 8px #ef444460" }}
             />
+          </div>
+          {(role === "admin" || role === "dean" || role === "doctor") && (
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border/40">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold mr-1">Bulk:</span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={filteredStudents.length === 0 || selectedCourse === "all"}
+                onClick={async () => {
+                  const unmarked = filteredStudents.filter((s) => !getStudentStatus(s.id));
+                  if (unmarked.length === 0) {
+                    toast.info("All students already marked");
+                    return;
+                  }
+                  for (const s of unmarked) {
+                    await markStudentAttendance.mutateAsync({
+                      studentId: s.id,
+                      status: "present",
+                      courseName: selectedCourseName,
+                      courseId: selectedCourse === "all" ? null : selectedCourse,
+                    });
+                  }
+                  toast.success(`Marked ${unmarked.length} students as present`);
+                }}
+                className="h-8 rounded-lg gap-1.5 text-xs border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                Mark unmarked Present
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={filteredStudents.length === 0 || selectedCourse === "all"}
+                onClick={async () => {
+                  const unmarked = filteredStudents.filter((s) => !getStudentStatus(s.id));
+                  if (unmarked.length === 0) {
+                    toast.info("All students already marked");
+                    return;
+                  }
+                  for (const s of unmarked) {
+                    await markStudentAttendance.mutateAsync({
+                      studentId: s.id,
+                      status: "absent",
+                      courseName: selectedCourseName,
+                      courseId: selectedCourse === "all" ? null : selectedCourse,
+                    });
+                  }
+                  toast.success(`Marked ${unmarked.length} students as absent`);
+                }}
+                className="h-8 rounded-lg gap-1.5 text-xs border-red-500/30 text-red-400 hover:bg-red-500/10"
+              >
+                <XCircle className="w-3.5 h-3.5" />
+                Mark unmarked Absent
+              </Button>
+              {selectedCourse === "all" && (
+                <span className="text-[10px] text-amber-400/80">Select a specific course to enable bulk actions</span>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end mt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => exportToCsv(
+                `attendance_week${selectedWeek}`,
+                filteredStudents,
+                [
+                  { header: "Code", accessor: (s: any) => s.student_code },
+                  { header: "Name", accessor: (s: any) => s.full_name },
+                  { header: "Year", accessor: (s: any) => s.year_level },
+                  { header: "Course", accessor: () => selectedCourseName },
+                  { header: "Week", accessor: () => selectedWeek },
+                  { header: "Session Type", accessor: () => selectedSessionType },
+                  { header: "Status", accessor: (s: any) => getStudentStatus(s.id) ?? "not_marked" },
+                ],
+              )}
+              className="rounded-xl gap-2 border-border/50 hover:border-primary/50 hover:bg-primary/10"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Export CSV
+            </Button>
           </div>
         </motion.div>
 

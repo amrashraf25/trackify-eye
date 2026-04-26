@@ -9,6 +9,15 @@ import { AlertTriangle, Bell, Activity, ShieldAlert, Filter } from "lucide-react
 // Displays live behavior alerts: a real-time incident feed and a searchable incident log table.
 const Alerts = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [severityFilter, setSeverityFilter] = useState<string>("all");
+
+  const SEV_CHIPS: { id: string; label: string; cls: string }[] = [
+    { id: "all",      label: "All",      cls: "bg-secondary/60 text-foreground border-border/50" },
+    { id: "critical", label: "Critical", cls: "bg-red-500/15 text-red-400 border-red-500/30" },
+    { id: "high",     label: "High",     cls: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
+    { id: "medium",   label: "Medium",   cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+    { id: "low",      label: "Low",      cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25" },
+  ];
 
   return (
     <MainLayout title="Alerts">
@@ -55,13 +64,24 @@ const Alerts = () => {
           transition={{ delay: 0.1 }}
           className="glass rounded-2xl p-4 border border-border/50"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
               <SearchBar value={searchQuery} onChange={setSearchQuery} />
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground px-3 py-2 rounded-xl bg-secondary/50 border border-border/50">
-              <Filter className="w-3.5 h-3.5" />
-              <span>All Types</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <Filter className="w-3.5 h-3.5 text-muted-foreground mr-1" />
+              {SEV_CHIPS.map((chip) => {
+                const active = severityFilter === chip.id;
+                return (
+                  <button
+                    key={chip.id}
+                    onClick={() => setSeverityFilter(chip.id)}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wide border transition-all ${chip.cls} ${active ? "ring-2 ring-offset-2 ring-offset-background ring-primary/40 scale-105" : "opacity-70 hover:opacity-100"}`}
+                  >
+                    {chip.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </motion.div>
@@ -97,7 +117,7 @@ const Alerts = () => {
             <h3 className="text-sm font-semibold text-foreground">Incident Log</h3>
           </div>
           <div className="p-5">
-            <IncidentTable searchQuery={searchQuery} />
+            <IncidentTable searchQuery={searchQuery} severityFilter={severityFilter} />
           </div>
         </motion.div>
       </div>

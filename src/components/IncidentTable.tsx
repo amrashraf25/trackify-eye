@@ -21,9 +21,17 @@ interface IncidentRecord {
 
 interface IncidentTableProps {
   searchQuery: string;
+  severityFilter?: string;
 }
 
-const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
+const SEV_BORDER: Record<string, string> = {
+  critical: "border-l-red-500",
+  high:     "border-l-orange-500",
+  medium:   "border-l-amber-500",
+  low:      "border-l-emerald-500",
+};
+
+const IncidentTable = ({ searchQuery, severityFilter = "all" }: IncidentTableProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -49,10 +57,13 @@ const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
     return () => { supabase.removeChannel(channel); };
   }, [queryClient]);
 
-  const filteredRecords = records.filter((record) =>
-    record.incident_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    `room ${record.room_number}`.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredRecords = records.filter((record) => {
+    if (severityFilter !== "all" && record.severity !== severityFilter) return false;
+    return (
+      record.incident_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      `room ${record.room_number}`.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   const SEV_STYLE: Record<string, string> = {
     critical: "bg-red-500/15 text-red-400 border border-red-500/30",
@@ -86,7 +97,7 @@ const IncidentTable = ({ searchQuery }: IncidentTableProps) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: index * 0.03 }}
-              className="border-t border-border/30 hover:bg-table-hover/50 transition-colors duration-150"
+              className={`border-t border-border/30 border-l-4 hover:bg-table-hover/50 transition-colors duration-150 ${SEV_BORDER[record.severity] ?? "border-l-transparent"}`}
             >
               <td className="px-4 py-3">
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold capitalize ${SEV_STYLE[record.severity] ?? SEV_STYLE.medium}`}>
