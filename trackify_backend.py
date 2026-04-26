@@ -875,9 +875,10 @@ class FastFaceRecognition:
                 'cheating':  'Cheating',
                 'fighting':  'Fighting',
             }
-            # Minimum consecutive frames before reporting (prevents single-frame spam)
+            # Minimum consecutive frames before reporting (prevents single-frame spam).
+            # Phone fires on the first frame for snappy feedback.
             FRAME_THRESH = {
-                'phone_use': 2,   # Lowered to fire faster on phones
+                'phone_use': 1,   # Instant fire — no waiting
                 'sleeping':  3,
                 'cheating':  4,
                 'fighting':  4,
@@ -931,10 +932,11 @@ class FastFaceRecognition:
                     setattr(self, counter_attr, 0)
 
                 if label in detected_this_frame:
-                    setattr(self, counter_attr, min(getattr(self, counter_attr) + 1, 30))
+                    # Boost faster on hit so the indicator latches and stays visible
+                    setattr(self, counter_attr, min(getattr(self, counter_attr) + 3, 30))
                 else:
-                    # Decay slowly (allow brief gaps in detection)
-                    setattr(self, counter_attr, max(0, getattr(self, counter_attr) - 2))
+                    # Decay slowly so brief inference misses don't drop the label
+                    setattr(self, counter_attr, max(0, getattr(self, counter_attr) - 1))
 
                 if getattr(self, counter_attr) >= FRAME_THRESH[label]:
                     behaviors.append(CUSTOM_MAP[label])
@@ -1203,6 +1205,13 @@ class FastFaceRecognition:
                 _ai_results['faces'] = faces_data
                 _ai_results['face_count'] = len(faces)
                 _ai_results['rects'] = [(f['rect'], faces_data[i]) for i, f in enumerate(faces)]
+
+            # Always reflect latest detection in /status, even when no session is active —
+            # the live preview should show what the AI sees right now.
+            with _status_lock:
+                _detection_status['faces']      = faces_data
+                _detection_status['face_count'] = len(faces)
+                _detection_status['connected']  = True
 
     # ── CAMERA LOOP ───────────────────────────────────────────────────────────
     # Opens the first available camera, warms it up, spawns the AI worker thread,
