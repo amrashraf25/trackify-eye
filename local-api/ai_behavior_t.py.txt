@@ -1,0 +1,88 @@
+import cv2
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+
+class AIBehaviorEngine:
+    def __init__(self, face_app, behavior_model, student_embeddings, student_names):
+        self.face_app = face_app
+        self.behavior_model = behavior_model
+        self.student_embeddings = student_embeddings
+        self.student_names = student_names
+
+        self.cheating_frames = 0
+        self.talking_frames = 0
+        self.phone_frames = 0
+
+    # ── FACE RECOGNITION ─────────────────────
+    def recognize(self, frame, face_rect):
+        x1, y1, x2, y2 = face_rect
+        face = frame[y1:y2, x1:x2]
+
+        if face.size == 0 or self.face_app is None:
+            return "Unknown", 0.0
+
+        faces = self.face_app.get(face)
+        if not faces:
+            return "Unknown", 0.0
+
+        emb = faces[0].embedding
+        emb = emb / np.linalg.norm(emb)
+
+        sims = cosine_similarity(self.student_embeddings, emb.reshape(1, -1)).flatten()
+        idx = np.argmax(sims)
+
+        if sims[idx] > 0.28:
+            return self.student_names[idx], float(sims[idx])
+
+        return "Unknown", float(sims[idx])
+
+    # ── CHEATING DETECTION ───────────────────
+    def detect_cheating(self, eye_ratio):
+        if eye_ratio > 0.42:
+            self.cheating_frames += 1
+        else:
+            self.cheating_frames = max(0, self.cheating_frames - 2)
+
+        return self.cheating_frames > 18
+
+    # ── TALKING DETECTION ────────────────────
+    def detect_talking(self, mouth_ratio):
+        if mouth_ratio > 0.18:
+            self.talking_frames += 2
+        else:
+            self.talking_frames = max(0, self.talking_frames - 1)
+
+        return self.talking_frames >= 5
+
+    # ── PHONE DETECTION ───────────────────────
+    def detect_phone(self, objects):
+        for obj in objects:
+            if "phone" in obj["label"]:
+                self.phone_frames += 1
+                return self.phone_frames > 4
+
+        self.phone_frames = max(0, self.phone_frames - 1)
+        return False
+
+    # ── MAIN PIPELINE ─────────────────────────
+    def analyze(self, frame, face_rect, landmarks, objects):
+        behaviors = []
+
+        name, conf = self.recognize(frame, face_rect)
+
+        if landmarks is not None:
+            if self.detect_cheating(0.5):  # placeholder ratio
+                behaviors.append("Cheating")
+
+            if self.detect_talking(0.2):   # placeholder ratio
+                behaviors.append("Talking")
+
+        if self.detect_phone(objects):
+            behaviors.append("Phone")
+
+        return {
+            "name": name,
+            "confidence": conf,
+            "behaviors": behaviors
+        }
