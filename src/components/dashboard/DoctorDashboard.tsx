@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MetricCard from "@/components/dashboard/MetricCard";
 import { BookOpen, Users, ClipboardCheck, AlertTriangle, GraduationCap, ArrowRight, TrendingDown, CalendarDays, ShieldAlert, ChevronRight, Activity } from "lucide-react";
+import DailySummaryCard from "@/components/dashboard/DailySummaryCard";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -379,6 +380,9 @@ const DoctorDashboard = () => {
             );
           })()}
         </motion.div>
+
+        {/* Daily Behavior Summary */}
+        <DailySummaryCard />
       </div>
     </MainLayout>
   );

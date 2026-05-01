@@ -369,6 +369,77 @@ if FLASK_AVAILABLE:
             files.append({"name": f, "size": _os.path.getsize(fp),
                            "url": f"http://localhost:5000/files/{f}"})
         return jsonify(files)
+
+    # ── DAILY BEHAVIOR SUMMARY ────────────────────────────────────────────────
+    # Returns a summary of all flagged behavior incidents for a given date.
+    # Query param: ?date=YYYY-MM-DD  (defaults to today)
+    # Response:
+    #   {
+    #     "date": "2025-04-28",
+    #     "total": 17,
+    #     "by_type": { "phone_use": 8, "sleeping": 5, "talking": 3, "eating": 1 },
+    #     "by_severity": { "critical": 1, "high": 4, "medium": 8, "low": 4 },
+    #     "top_behavior": "phone_use",
+    #     "incidents": [ { ...full row... }, ... ]
+    #   }
+    @app.route("/api/summary/daily", methods=["GET", "OPTIONS"])
+    def daily_summary():
+        if _request.method == "OPTIONS":
+            return jsonify({}), 200
+
+        from datetime import datetime as _dt, timezone as _tz
+        import requests as _req
+
+        # Resolve requested date (default = today in UTC)
+        date_str = _request.args.get("date", _dt.now(_tz.utc).strftime("%Y-%m-%d"))
+        try:
+            _dt.strptime(date_str, "%Y-%m-%d")   # validate format
+        except ValueError:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+        # Supabase range filter: full UTC day
+        day_start = f"{date_str}T00:00:00+00:00"
+        day_end   = f"{date_str}T23:59:59.999+00:00"
+
+        try:
+            resp = _req.get(
+                f"{SUPABASE_URL}/rest/v1/incidents",
+                params={
+                    "select": "id,incident_type,severity,detected_at,room_number,student_id",
+                    "detected_at": f"gte.{day_start}",
+                    "and": f"(detected_at.lte.{day_end})",
+                    "order": "detected_at.desc",
+                    "limit": "1000",
+                },
+                headers=SUPABASE_HEADERS,
+                timeout=10,
+            )
+            resp.raise_for_status()
+            incidents = resp.json()
+        except Exception as e:
+            print(f"✗ daily_summary fetch error: {e}")
+            # Fallback: return empty summary so the UI still renders
+            incidents = []
+
+        # Aggregate counts
+        by_type: dict = {}
+        by_severity: dict = {}
+        for inc in incidents:
+            t = inc.get("incident_type", "unknown")
+            s = inc.get("severity", "low")
+            by_type[t]     = by_type.get(t, 0) + 1
+            by_severity[s] = by_severity.get(s, 0) + 1
+
+        top_behavior = max(by_type, key=by_type.get) if by_type else None
+
+        return jsonify({
+            "date":         date_str,
+            "total":        len(incidents),
+            "by_type":      by_type,
+            "by_severity":  by_severity,
+            "top_behavior": top_behavior,
+            "incidents":    incidents,
+        })
     # ─────────────────────────────────────────────────────────────────────────
 # ─────────────────────────────────────────────────────────────────────────────
 

@@ -8,6 +8,7 @@ import AttendanceChart from "@/components/dashboard/AttendanceChart";
 import BehaviorPieChart from "@/components/dashboard/BehaviorPieChart";
 import GradesComposition from "@/components/dashboard/GradesComposition";
 import RecentCourses from "@/components/dashboard/RecentCourses";
+import DailySummaryCard from "@/components/dashboard/DailySummaryCard";
 import { BookOpen, AlertTriangle, Users, Stethoscope, Camera, CalendarDays, BarChart2, Bell, Play, Eye, ShieldAlert, ChevronRight, Activity } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -156,6 +157,9 @@ const DeanDashboard = () => {
             ))}
           </div>
         </motion.div>
+
+        {/* Daily Behavior Summary */}
+        <DailySummaryCard />
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
