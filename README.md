@@ -66,24 +66,3 @@ npx vitest run tests/alerts/test_alerts_frontend.test.tsx
 | `LiveIncidentFeed: severity color mapping` | getSeverityColor() for all severity levels incl. null |
 | `IncidentDetail: status style mapping` | resolved / reviewing / open → correct CSS class |
 
----
-
-## How to upload this as a GitHub branch
-
-```bash
-# 1. Create a new branch from main
-git checkout main
-git checkout -b feature/alerts-tests
-
-# 2. Stage only this folder
-git add tests/alerts/
-
-# 3. Commit
-git commit -m "test: unit tests for alerts feature (backend + frontend)"
-
-# 4. Push the branch (GitHub will show a "Compare & pull request" button)
-git push origin feature/alerts-tests
-```
-
-Then on GitHub → your repo → switch to the `feature/alerts-tests` branch to see the files,
-or click **"Compare & pull request"** to open a PR.
