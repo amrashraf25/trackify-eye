@@ -2,21 +2,26 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import MainLayout from "@/components/layout/MainLayout";
+import { exportToCsv } from "@/lib/csv";
 
 const LOCAL_API = "http://localhost:3001";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileText, TrendingUp, Users, AlertTriangle, Activity, BarChart3, Sparkles, CalendarDays, ShieldAlert } from "lucide-react";
+import { Download, FileText, TrendingUp, Users, AlertTriangle, Activity, BarChart3, Sparkles, CalendarDays, ShieldAlert, GraduationCap, BookOpen, Filter } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { toast } from "sonner";
 import { subDays, subMonths, subYears, isAfter, format } from "date-fns";
 import { motion } from "framer-motion";
 
 const Reports = () => {
-  const [dateRange, setDateRange] = useState("month");
-  const [reportType, setReportType] = useState("attendance");
+  const [dateRange, setDateRange]           = useState("month");
+  const [reportType, setReportType]         = useState("attendance");
+  // AC3 filters — attendance report
+  const [courseFilter, setCourseFilter]     = useState("all");
+  const [deptFilter, setDeptFilter]         = useState("all");
+  const [semesterFilter, setSemesterFilter] = useState("all");
 
   const getDateRangeStart = () => {
     const now = new Date();
@@ -91,13 +96,69 @@ const Reports = () => {
     },
   });
 
+  // AC3 — courses list for filter dropdown
+  const { data: courses = [] } = useQuery({
+    queryKey: ["report-courses-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, name, course_code, semester, department_id")
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // AC3 — departments list for filter dropdown
+  const { data: departments = [] } = useQuery({
+    queryKey: ["report-departments-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("departments")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Derive unique semesters from courses data
+  const semesters = useMemo(() => {
+    const set = new Set<string>();
+    courses.forEach((c: any) => { if (c.semester) set.add(c.semester); });
+    return Array.from(set).sort();
+  }, [courses]);
+
   const filteredAttendance = useMemo(() => {
     const startDate = getDateRangeStart();
-    return attendance.filter((r) => {
+    return attendance.filter((r: any) => {
+      // Date range filter
       const ts = r.confirmed_at || r.date;
-      return ts && isAfter(new Date(ts), startDate);
+      if (!ts || !isAfter(new Date(ts), startDate)) return false;
+
+      // AC3: course filter
+      if (courseFilter !== "all") {
+        const cid = r.course_id || r.courses?.id;
+        if (cid !== courseFilter) return false;
+      }
+
+      // AC3: department filter — resolve via courses lookup
+      if (deptFilter !== "all") {
+        const cid = r.course_id || r.courses?.id;
+        const course = courses.find((c: any) => c.id === cid);
+        if (!course || course.department_id !== deptFilter) return false;
+      }
+
+      // AC3: semester filter — resolve via courses lookup
+      if (semesterFilter !== "all") {
+        const cid = r.course_id || r.courses?.id;
+        const course = courses.find((c: any) => c.id === cid);
+        if (!course || course.semester !== semesterFilter) return false;
+      }
+
+      return true;
     });
-  }, [attendance, dateRange]);
+  }, [attendance, dateRange, courseFilter, deptFilter, semesterFilter, courses]);
 
   const filteredIncidents = useMemo(() => {
     const startDate = getDateRangeStart();
@@ -126,6 +187,32 @@ const Reports = () => {
       score: behaviorScores.find((b) => b.student_id === s.id)?.score ?? 100,
     }));
   }, [students, behaviorScores]);
+
+  // AC2 — per-student attendance metrics
+  const studentAttendanceRows = useMemo(() => {
+    const byStudent: Record<string, {
+      name: string; code: string;
+      total: number; present: number; absent: number; late: number;
+    }> = {};
+
+    filteredAttendance.forEach((r: any) => {
+      const sid   = r.student_id ?? "unknown";
+      const sname = r.student_name ?? students.find((s: any) => s.id === sid)?.full_name ?? "—";
+      const scode = students.find((s: any) => s.id === sid)?.student_code ?? "—";
+      if (!byStudent[sid]) byStudent[sid] = { name: sname, code: scode, total: 0, present: 0, absent: 0, late: 0 };
+      byStudent[sid].total++;
+      if (r.status === "present")      byStudent[sid].present++;
+      else if (r.status === "absent")  byStudent[sid].absent++;
+      else if (r.status === "late")    byStudent[sid].late++;
+    });
+
+    return Object.values(byStudent)
+      .map((row) => ({
+        ...row,
+        pct: row.total > 0 ? Math.round((row.present / row.total) * 100) : 0,
+      }))
+      .sort((a, b) => a.pct - b.pct);   // lowest attendance first — needs attention first
+  }, [filteredAttendance, students]);
 
   const courseAttendance = useMemo(() => {
     const byCourseName: Record<string, { present: number; absent: number; late: number }> = {};
@@ -401,6 +488,229 @@ const Reports = () => {
             </div>
           </motion.div>
         </div>
+
+        {/* -------------- AC3: ATTENDANCE FILTERS -------------- */}
+        {reportType === "attendance" && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="rounded-2xl border border-white/[0.07] overflow-hidden"
+            style={{ background: "hsl(225 25% 7%)" }}
+          >
+            <div className="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2.5"
+              style={{ background: "linear-gradient(90deg, hsl(217 91% 60% / 0.06), transparent)" }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ background: "hsl(217 91% 60% / 0.12)", boxShadow: "0 0 10px hsl(217 91% 60% / 0.2)" }}>
+                <Filter className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white/90">Attendance Filters</h3>
+                <p className="text-[10px] text-white/30">Filter by course, department or semester — AC3</p>
+              </div>
+              {(courseFilter !== "all" || deptFilter !== "all" || semesterFilter !== "all") && (
+                <button
+                  onClick={() => { setCourseFilter("all"); setDeptFilter("all"); setSemesterFilter("all"); }}
+                  className="ml-auto text-[10px] text-primary/70 hover:text-primary font-semibold transition-colors"
+                >
+                  Clear filters ×
+                </button>
+              )}
+            </div>
+            <div className="p-4 flex flex-wrap gap-3">
+              {/* Course filter */}
+              <div className="flex flex-col gap-1 min-w-[200px] flex-1">
+                <label className="text-[10px] uppercase tracking-wider text-white/30 font-semibold flex items-center gap-1">
+                  <BookOpen className="w-3 h-3" /> Course
+                </label>
+                <Select value={courseFilter} onValueChange={setCourseFilter}>
+                  <SelectTrigger className="h-9 text-xs rounded-xl border-white/[0.08]" style={{ background: "hsl(225 25% 10%)" }}>
+                    <SelectValue placeholder="All courses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Courses</SelectItem>
+                    {courses.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} {c.course_code ? `(${c.course_code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Department filter */}
+              <div className="flex flex-col gap-1 min-w-[180px] flex-1">
+                <label className="text-[10px] uppercase tracking-wider text-white/30 font-semibold flex items-center gap-1">
+                  <GraduationCap className="w-3 h-3" /> Department
+                </label>
+                <Select value={deptFilter} onValueChange={setDeptFilter}>
+                  <SelectTrigger className="h-9 text-xs rounded-xl border-white/[0.08]" style={{ background: "hsl(225 25% 10%)" }}>
+                    <SelectValue placeholder="All departments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Departments</SelectItem>
+                    {departments.map((d: any) => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Semester filter */}
+              <div className="flex flex-col gap-1 min-w-[160px] flex-1">
+                <label className="text-[10px] uppercase tracking-wider text-white/30 font-semibold flex items-center gap-1">
+                  <CalendarDays className="w-3 h-3" /> Semester
+                </label>
+                <Select value={semesterFilter} onValueChange={setSemesterFilter}>
+                  <SelectTrigger className="h-9 text-xs rounded-xl border-white/[0.08]" style={{ background: "hsl(225 25% 10%)" }}>
+                    <SelectValue placeholder="All semesters" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Semesters</SelectItem>
+                    {semesters.map((s) => (
+                      <SelectItem key={s} value={s}>{s}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Active filter summary badge */}
+              {filteredAttendance.length > 0 && (
+                <div className="flex items-end pb-0.5">
+                  <span className="text-[11px] font-semibold px-3 py-1.5 rounded-xl"
+                    style={{ background: "hsl(217 91% 60% / 0.12)", color: "hsl(217 91% 70%)", border: "1px solid hsl(217 91% 60% / 0.2)" }}>
+                    {filteredAttendance.length} record{filteredAttendance.length !== 1 ? "s" : ""} shown
+                  </span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* -------------- AC2: PER-STUDENT ATTENDANCE TABLE -------------- */}
+        {reportType === "attendance" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="rounded-2xl border border-white/[0.07] overflow-hidden"
+            style={{ background: "hsl(225 25% 7%)" }}
+          >
+            <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between gap-2.5"
+              style={{ background: "linear-gradient(90deg, hsl(160 84% 39% / 0.06), transparent)" }}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: "hsl(160 84% 39% / 0.12)", boxShadow: "0 0 10px hsl(160 84% 39% / 0.2)" }}>
+                  <Users className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white/90">Student Attendance Breakdown</h3>
+                  <p className="text-[10px] text-white/30">
+                    {studentAttendanceRows.length} student{studentAttendanceRows.length !== 1 ? "s" : ""} — total classes, attended, absences, %
+                  </p>
+                </div>
+              </div>
+              {studentAttendanceRows.length > 0 && (
+                <button
+                  onClick={() => exportToCsv("student-attendance-report", studentAttendanceRows, [
+                    { header: "Student",     accessor: (r) => r.name },
+                    { header: "Code",        accessor: (r) => r.code },
+                    { header: "Total Classes", accessor: (r) => String(r.total) },
+                    { header: "Attended",    accessor: (r) => String(r.present) },
+                    { header: "Late",        accessor: (r) => String(r.late) },
+                    { header: "Absent",      accessor: (r) => String(r.absent) },
+                    { header: "Attendance %", accessor: (r) => `${r.pct}%` },
+                  ])}
+                  className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-xl transition-colors hover:opacity-80"
+                  style={{ background: "hsl(160 84% 39% / 0.12)", color: "hsl(160 84% 55%)", border: "1px solid hsl(160 84% 39% / 0.2)" }}
+                >
+                  <Download className="w-3 h-3" /> Export CSV
+                </button>
+              )}
+            </div>
+
+            {studentAttendanceRows.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-14 gap-3">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "hsl(225 25% 10%)" }}>
+                  <Users className="w-7 h-7 text-white/15" />
+                </div>
+                <p className="text-sm text-white/30">No attendance records for the selected filters</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ background: "hsl(225 25% 9%)" }}>
+                      {["Student", "Code", "Total Classes", "Attended", "Late", "Absent", "Attendance %"].map((h) => (
+                        <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider"
+                          style={{ color: "hsl(225 15% 45%)" }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {studentAttendanceRows.map((row, i) => {
+                      const pctColor =
+                        row.pct >= 75 ? "hsl(160 84% 50%)" :
+                        row.pct >= 50 ? "hsl(38 92% 55%)" :
+                        "hsl(0 84% 60%)";
+                      return (
+                        <motion.tr
+                          key={row.code + i}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.52 + i * 0.025 }}
+                          className="border-t transition-colors"
+                          style={{ borderColor: "hsl(225 25% 11%)" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(225 25% 10%)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+                        >
+                          <td className="px-4 py-3 text-sm font-semibold" style={{ color: "hsl(225 15% 85%)" }}>
+                            {row.name}
+                          </td>
+                          <td className="px-4 py-3 text-xs font-mono" style={{ color: "hsl(225 15% 45%)" }}>
+                            {row.code}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-white/70 tabular-nums">
+                            {row.total}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold tabular-nums" style={{ color: "hsl(160 84% 50%)" }}>
+                              {row.present}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold tabular-nums" style={{ color: "hsl(38 92% 55%)" }}>
+                              {row.late}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold tabular-nums" style={{ color: "hsl(0 84% 60%)" }}>
+                              {row.absent}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: "hsl(225 25% 14%)" }}>
+                                <div className="h-full rounded-full transition-all duration-700"
+                                  style={{ width: `${row.pct}%`, background: pctColor }} />
+                              </div>
+                              <span className="text-sm font-black tabular-nums w-10 text-right"
+                                style={{ color: pctColor }}>
+                                {row.pct}%
+                              </span>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* -------------- LOW BEHAVIOR ALERT -------------- */}
         {lowBehaviorStudents.length > 0 && (
