@@ -48,6 +48,7 @@ const multer = require('multer'); // Multipart form-data parser (used for file u
 // rest of the server code works identically regardless of which DB is active.
 let getData, save, uuidv4, emitChange, runQuery, runInsert, runUpdate, runDelete, runUpsert;
 let _usingSQLite = false; // Flag used throughout the file to branch between SQLite and JSON paths
+/*
 try {
   const sqliteDb  = require('./models/db');
   const sqliteQB  = require('./models/query-builder-sqlite');
@@ -63,8 +64,9 @@ try {
   _usingSQLite = true;
   console.log('✓ Using SQLite database');
 } catch (e) {
+*/
   // SQLite driver unavailable — fall back to the flat JSON file database
-  console.warn('⚠ SQLite not available, falling back to JSON DB:', e.message);
+  console.warn('⚠ SQLite disabled, using JSON DB for migrated data');
   const jsonDb = require('./db');
   const jsonQB = require('./query-builder');
   getData    = jsonDb.getData;
@@ -76,7 +78,7 @@ try {
   runUpdate  = jsonQB.runUpdate;
   runDelete  = jsonQB.runDelete;
   runUpsert  = jsonQB.runUpsert;
-}
+//}
 
 // ── New API routes (SQLite-backed) ────────────────────────────────────
 // Feature-specific routers mounted under /api/*
