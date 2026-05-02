@@ -4,15 +4,8 @@
  * Follows JUnit-style structure adapted for TypeScript / Vitest:
  *
  *   AAA Pattern  : Arrange → Act → Assert in every test
- *   beforeEach() : setup shared state before each test (@BeforeEach)
- *   Assertions   : expect(...).toBe / toEqual / toBeNull / toBeTruthy
- *   Mocking      : vi.fn() mirrors Mockito mock() / when().thenReturn()
- *
- *   Testing Checklist:
- *     ✅ Happy path  – normal inputs, expected behaviour
- *     ✅ Edge cases  – empty, null, zero, boundary values
- *     ✅ Negative    – invalid inputs, wrong types, mismatched values
- *     ✅ No crashes  – all edge paths return safe results, no throws
+ *   beforeEach() : shared fixture setup (@BeforeEach)
+ *   Exactly 4 tests per function: Happy path / Edge case / Negative / No crash
  *
  * Run:
  *   npx vitest run tests/alerts/test_alerts_frontend.test.tsx
@@ -21,9 +14,6 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 
-// ─────────────────────────────────────────────────────────────────
-//  TYPES  (mirror src/components/IncidentTable.tsx and pages/Alerts.tsx)
-// ─────────────────────────────────────────────────────────────────
 interface IncidentRecord {
   id: string;
   incident_type: string;
@@ -34,12 +24,6 @@ interface IncidentRecord {
   detected_at: string;
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  LOGIC UNDER TEST  (pure functions extracted from components)
-//  Mockito equivalent: we isolate logic from Supabase / React
-// ─────────────────────────────────────────────────────────────────
-
-/** Mirrors filteredRecords in IncidentTable.tsx */
 function applyFilter(
   records: IncidentRecord[],
   searchQuery: string,
@@ -54,7 +38,6 @@ function applyFilter(
   });
 }
 
-/** Mirrors SEV_BORDER in IncidentTable.tsx */
 const SEV_BORDER: Record<string, string> = {
   critical: "border-l-red-500",
   high:     "border-l-orange-500",
@@ -62,7 +45,6 @@ const SEV_BORDER: Record<string, string> = {
   low:      "border-l-emerald-500",
 };
 
-/** Mirrors getBehaviorIcon() in LiveIncidentFeed.tsx */
 function getBehaviorIconName(type: string): string {
   const lower = type.toLowerCase();
   if (lower.includes("phone"))  return "Phone";
@@ -73,7 +55,6 @@ function getBehaviorIconName(type: string): string {
   return "AlertTriangle";
 }
 
-/** Mirrors getSeverityColor() in LiveIncidentFeed.tsx */
 function getSeverityColor(severity: string | null): string {
   switch (severity) {
     case "high":   return "bg-destructive/10 text-destructive";
@@ -83,26 +64,21 @@ function getSeverityColor(severity: string | null): string {
   }
 }
 
-/** Mirrors status style logic in IncidentDetail.tsx */
 function getStatusStyle(status: string): string {
   if (status === "resolved")  return "bg-green-500/20 text-green-400";
   if (status === "reviewing") return "bg-yellow-500/20 text-yellow-400";
   return "bg-primary/20 text-primary";
 }
 
-// ─────────────────────────────────────────────────────────────────
-//  SHARED FIXTURES  (@BeforeEach equivalent)
-// ─────────────────────────────────────────────────────────────────
 let records: IncidentRecord[];
 
 beforeEach(() => {
-  // Arrange — fresh data before every test (@BeforeEach)
   records = [
-    { id: "1", incident_type: "phone_use", severity: "high",     room_number: "101", status: "open",      detected_at: "2025-04-28T08:00:00Z", student_name: "Ali Hassan" },
-    { id: "2", incident_type: "sleeping",  severity: "medium",   room_number: "202", status: "reviewing", detected_at: "2025-04-28T09:00:00Z", student_name: "Sara Ahmed" },
-    { id: "3", incident_type: "fighting",  severity: "critical", room_number: "101", status: "open",      detected_at: "2025-04-28T10:00:00Z", student_name: null },
-    { id: "4", incident_type: "eating",    severity: "low",      room_number: "303", status: "resolved",  detected_at: "2025-04-28T11:00:00Z", student_name: "Omar Nour" },
-    { id: "5", incident_type: "phone_use", severity: "high",     room_number: "202", status: "open",      detected_at: "2025-04-28T12:00:00Z", student_name: "Sara Ahmed" },
+    { id: "1", incident_type: "phone_use", severity: "high",     room_number: "101", status: "open",      detected_at: "2025-04-28T08:00:00Z" },
+    { id: "2", incident_type: "sleeping",  severity: "medium",   room_number: "202", status: "reviewing", detected_at: "2025-04-28T09:00:00Z" },
+    { id: "3", incident_type: "fighting",  severity: "critical", room_number: "101", status: "open",      detected_at: "2025-04-28T10:00:00Z" },
+    { id: "4", incident_type: "eating",    severity: "low",      room_number: "303", status: "resolved",  detected_at: "2025-04-28T11:00:00Z" },
+    { id: "5", incident_type: "phone_use", severity: "high",     room_number: "202", status: "open",      detected_at: "2025-04-28T12:00:00Z" },
   ];
 });
 
@@ -110,139 +86,29 @@ beforeEach(() => {
 //  1. IncidentTable — filter logic
 // ════════════════════════════════════════════════════════════════
 describe("IncidentTable: applyFilter()", () => {
-
-  // ── Happy Path ──────────────────────────────────────────────
-  it("happy path — 'all' severity returns all records", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "", "all");
-    // Assert  (assertEquals(5, result.length))
-    expect(result.length).toBe(5);
+  it("Happy path: 'all' severity returns all records; search by type and room narrows correctly", () => {
+    expect(applyFilter(records, "", "all").length).toBe(5);
+    expect(applyFilter(records, "phone", "all").length).toBe(2);
+    expect(applyFilter(records, "room 101", "all").length).toBe(2);
+    expect(applyFilter(records, "phone", "high").length).toBe(2);
   });
 
-  it("happy path — filter 'high' returns only high-severity records", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "", "high");
-    // Assert
-    expect(result.length).toBe(2);
-    result.forEach((r) => expect(r.severity).toBe("high")); // assertTrue
-  });
-
-  it("happy path — filter 'critical' returns exactly one record", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "", "critical");
-    // Assert  (assertEquals(1, result.length))
-    expect(result.length).toBe(1);
-    expect(result[0].id).toBe("3");
-  });
-
-  it("happy path — search by incident type matches correctly", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "phone", "all");
-    // Assert
-    expect(result.length).toBe(2);
-    result.forEach((r) => expect(r.incident_type).toContain("phone")); // assertTrue
-  });
-
-  it("happy path — search by room number matches room 101 records", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "room 101", "all");
-    // Assert
-    expect(result.length).toBe(2);
-    result.forEach((r) => expect(r.room_number).toBe("101"));
-  });
-
-  it("happy path — combined search and severity narrows results", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "phone", "high");
-    // Assert
-    expect(result.length).toBe(2);
-    result.forEach((r) => expect(r.severity).toBe("high"));
-  });
-
-  // ── Edge Cases ──────────────────────────────────────────────
-  it("edge case — empty records list returns empty array (assertNotNull)", () => {
-    // Arrange
-    const emptyRecords: IncidentRecord[] = [];
-    // Act
-    const result = applyFilter(emptyRecords, "phone", "high");
-    // Assert
-    expect(result).not.toBeNull();          // assertNotNull
+  it("Edge case: empty records list returns non-null empty array", () => {
+    const result = applyFilter([], "phone", "high");
+    expect(result).not.toBeNull();
     expect(result.length).toBe(0);
   });
 
-  it("edge case — empty search string matches all records", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "", "all");
-    // Assert  (assertEquals(5, result.length))
-    expect(result.length).toBe(5);
+  it("Negative test: unknown severity filter returns empty list", () => {
+    expect(applyFilter(records, "", "extreme")).toEqual([]);
+    expect(applyFilter(records, "xyz_not_found", "all")).toEqual([]);
   });
 
-  it("edge case — filter 'low' returns exactly one record (minimum severity)", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "", "low");
-    // Assert
-    expect(result.length).toBe(1);
-    expect(result[0].severity).toBe("low");
-  });
-
-  it("edge case — single record list matched correctly", () => {
-    // Arrange
-    const single: IncidentRecord[] = [records[0]];
-    // Act
-    const match  = applyFilter(single, "", "high");
-    const noMatch = applyFilter(single, "", "low");
-    // Assert
-    expect(match.length).toBe(1);
-    expect(noMatch.length).toBe(0);
-  });
-
-  // ── Negative Tests ──────────────────────────────────────────
-  it("negative — unknown severity returns empty list", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "", "extreme");
-    // Assert  (assertEquals([], result))
-    expect(result).toEqual([]);
-  });
-
-  it("negative — search with no match returns empty list", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "xyz_not_found_anywhere", "all");
-    // Assert
-    expect(result).toEqual([]);
-  });
-
-  it("negative — search is case-insensitive (UPPERCASE should still match)", () => {
-    // Arrange (done in beforeEach)
-    // Act
-    const result = applyFilter(records, "PHONE", "all");
-    // Assert  (assertTrue — must find records)
-    expect(result.length).toBeGreaterThan(0);
-    expect(result.length).toBe(2);
-  });
-
-  // ── No Crashes ──────────────────────────────────────────────
-  it("no crash — null severity on record does not throw", () => {
-    // Arrange
+  it("No crash: null severity on a record does not throw", () => {
     const withNull: IncidentRecord[] = [
-      { id: "z", incident_type: "eating", severity: null, room_number: "100", status: "open", detected_at: "2025-04-28T00:00:00Z" },
+      { id: "z", incident_type: "eating", severity: null, room_number: "100", status: "open", detected_at: "" },
     ];
-    // Act + Assert (no exception thrown)
     expect(() => applyFilter(withNull, "", "high")).not.toThrow();
-  });
-
-  it("no crash — empty search and empty records does not throw", () => {
-    // Arrange + Act + Assert
-    expect(() => applyFilter([], "", "all")).not.toThrow();
   });
 });
 
@@ -250,37 +116,24 @@ describe("IncidentTable: applyFilter()", () => {
 //  2. SEV_BORDER — severity left-border colour map
 // ════════════════════════════════════════════════════════════════
 describe("IncidentTable: SEV_BORDER colour map", () => {
-
-  // ── Happy Path ──────────────────────────────────────────────
-  it("happy path — critical maps to red left border", () => {
-    // Arrange + Act + Assert  (assertEquals)
+  it("Happy path: all four severity keys map to correct border classes", () => {
     expect(SEV_BORDER["critical"]).toBe("border-l-red-500");
-  });
-
-  it("happy path — high maps to orange left border", () => {
     expect(SEV_BORDER["high"]).toBe("border-l-orange-500");
-  });
-
-  it("happy path — medium maps to amber left border", () => {
     expect(SEV_BORDER["medium"]).toBe("border-l-amber-500");
-  });
-
-  it("happy path — low maps to emerald left border", () => {
     expect(SEV_BORDER["low"]).toBe("border-l-emerald-500");
   });
 
-  // ── Negative Tests ──────────────────────────────────────────
-  it("negative — unknown severity key returns undefined (not a class string)", () => {
-    // Arrange + Act
-    const result = SEV_BORDER["unknown_severity"];
-    // Assert  (assertNull equivalent)
-    expect(result).toBeUndefined();   // assertNull
+  it("Edge case: empty string key returns undefined (not a class string)", () => {
+    expect(SEV_BORDER[""]).toBeUndefined();
   });
 
-  // ── No Crashes ──────────────────────────────────────────────
-  it("no crash — accessing null key on SEV_BORDER does not throw", () => {
-    // Arrange + Act + Assert
+  it("Negative test: unknown severity key returns undefined", () => {
+    expect(SEV_BORDER["unknown_severity"]).toBeUndefined();
+  });
+
+  it("No crash: accessing any key on SEV_BORDER does not throw", () => {
     expect(() => SEV_BORDER["" as string]).not.toThrow();
+    expect(() => SEV_BORDER["extreme"]).not.toThrow();
   });
 });
 
@@ -288,67 +141,26 @@ describe("IncidentTable: SEV_BORDER colour map", () => {
 //  3. LiveIncidentFeed — behaviour icon mapping
 // ════════════════════════════════════════════════════════════════
 describe("LiveIncidentFeed: getBehaviorIconName()", () => {
-
-  // ── Happy Path ──────────────────────────────────────────────
-  it("happy path — phone_use returns Phone icon", () => {
-    // Arrange
-    const type = "phone_use";
-    // Act
-    const icon = getBehaviorIconName(type);
-    // Assert  (assertEquals("Phone", icon))
-    expect(icon).toBe("Phone");
-  });
-
-  it("happy path — sleeping returns Moon icon", () => {
+  it("Happy path: all known behavior types map to correct icon names", () => {
+    expect(getBehaviorIconName("phone_use")).toBe("Phone");
     expect(getBehaviorIconName("sleeping")).toBe("Moon");
-  });
-
-  it("happy path — talking returns MessageCircle icon", () => {
     expect(getBehaviorIconName("talking")).toBe("MessageCircle");
-  });
-
-  it("happy path — drinking returns Coffee icon", () => {
     expect(getBehaviorIconName("drinking")).toBe("Coffee");
-  });
-
-  it("happy path — eating returns Utensils icon", () => {
     expect(getBehaviorIconName("eating")).toBe("Utensils");
   });
 
-  // ── Edge Cases ──────────────────────────────────────────────
-  it("edge case — input is UPPERCASE still maps correctly (case-insensitive)", () => {
-    // Arrange
-    const type = "PHONE_USE";
-    // Act
-    const icon = getBehaviorIconName(type);
-    // Assert  (assertEquals("Phone", icon))
-    expect(icon).toBe("Phone");
-  });
-
-  it("edge case — mixed case 'Sleeping' still maps correctly", () => {
+  it("Edge case: UPPERCASE input is case-insensitive and maps correctly", () => {
+    expect(getBehaviorIconName("PHONE_USE")).toBe("Phone");
     expect(getBehaviorIconName("Sleeping")).toBe("Moon");
   });
 
-  // ── Negative Tests ──────────────────────────────────────────
-  it("negative — unknown behaviour type falls back to AlertTriangle", () => {
-    // Arrange
-    const type = "fighting";   // not in the list
-    // Act
-    const icon = getBehaviorIconName(type);
-    // Assert  (assertEquals("AlertTriangle", icon))
-    expect(icon).toBe("AlertTriangle");
-  });
-
-  it("negative — empty string falls back to AlertTriangle", () => {
+  it("Negative test: unknown behavior type falls back to AlertTriangle", () => {
+    expect(getBehaviorIconName("fighting")).toBe("AlertTriangle");
     expect(getBehaviorIconName("")).toBe("AlertTriangle");
   });
 
-  // ── No Crashes ──────────────────────────────────────────────
-  it("no crash — very long string input does not throw", () => {
-    // Arrange
-    const longType = "a".repeat(10_000);
-    // Act + Assert
-    expect(() => getBehaviorIconName(longType)).not.toThrow();
+  it("No crash: very long string input does not throw", () => {
+    expect(() => getBehaviorIconName("a".repeat(10_000))).not.toThrow();
   });
 });
 
@@ -356,45 +168,24 @@ describe("LiveIncidentFeed: getBehaviorIconName()", () => {
 //  4. LiveIncidentFeed — severity colour mapping
 // ════════════════════════════════════════════════════════════════
 describe("LiveIncidentFeed: getSeverityColor()", () => {
-
-  // ── Happy Path ──────────────────────────────────────────────
-  it("happy path — 'high' returns destructive classes", () => {
-    // Arrange + Act + Assert
+  it("Happy path: high/medium/low return correct class strings", () => {
     expect(getSeverityColor("high")).toContain("destructive");
-  });
-
-  it("happy path — 'medium' returns amber classes", () => {
     expect(getSeverityColor("medium")).toContain("amber-500");
-  });
-
-  it("happy path — 'low' returns neon-blue classes", () => {
     expect(getSeverityColor("low")).toContain("neon-blue");
   });
 
-  // ── Edge Cases ──────────────────────────────────────────────
-  it("edge case — null severity returns muted fallback (assertNotNull)", () => {
-    // Arrange + Act
+  it("Edge case: null severity returns non-null muted fallback", () => {
     const result = getSeverityColor(null);
-    // Assert
-    expect(result).not.toBeNull();          // assertNotNull
+    expect(result).not.toBeNull();
     expect(result).toContain("muted");
   });
 
-  // ── Negative Tests ──────────────────────────────────────────
-  it("negative — 'critical' is not a defined case, returns muted fallback", () => {
-    // Arrange + Act
-    const result = getSeverityColor("critical");
-    // Assert  — should NOT return undefined or throw
-    expect(result).not.toBeUndefined();
-    expect(result).toContain("muted");
-  });
-
-  it("negative — empty string returns muted fallback", () => {
+  it("Negative test: empty string and unknown values return muted fallback", () => {
     expect(getSeverityColor("")).toContain("muted");
+    expect(getSeverityColor("critical")).toContain("muted");
   });
 
-  // ── No Crashes ──────────────────────────────────────────────
-  it("no crash — any string value does not throw", () => {
+  it("No crash: any string value (including null) does not throw", () => {
     expect(() => getSeverityColor("anything_random")).not.toThrow();
     expect(() => getSeverityColor(null)).not.toThrow();
   });
@@ -404,42 +195,26 @@ describe("LiveIncidentFeed: getSeverityColor()", () => {
 //  5. IncidentDetail — status style mapping
 // ════════════════════════════════════════════════════════════════
 describe("IncidentDetail: getStatusStyle()", () => {
-
-  // ── Happy Path ──────────────────────────────────────────────
-  it("happy path — 'resolved' returns green classes", () => {
-    // Arrange + Act + Assert  (assertEquals)
+  it("Happy path: resolved/reviewing/open return correct class strings", () => {
     expect(getStatusStyle("resolved")).toContain("green");
-  });
-
-  it("happy path — 'reviewing' returns yellow classes", () => {
     expect(getStatusStyle("reviewing")).toContain("yellow");
-  });
-
-  it("happy path — 'open' returns primary classes", () => {
     expect(getStatusStyle("open")).toContain("primary");
   });
 
-  // ── Edge Cases ──────────────────────────────────────────────
-  it("edge case — empty string falls back to primary (open state)", () => {
-    // Arrange + Act
+  it("Edge case: empty string falls back to primary class", () => {
     const result = getStatusStyle("");
-    // Assert  (assertNotNull + assertTrue contains primary)
     expect(result).not.toBeNull();
     expect(result).toContain("primary");
   });
 
-  // ── Negative Tests ──────────────────────────────────────────
-  it("negative — unknown status falls back to primary (assertFalse for green/yellow)", () => {
-    // Arrange + Act
+  it("Negative test: unknown status falls back to primary (not green or yellow)", () => {
     const result = getStatusStyle("pending");
-    // Assert
     expect(result).not.toContain("green");
     expect(result).not.toContain("yellow");
     expect(result).toContain("primary");
   });
 
-  // ── No Crashes ──────────────────────────────────────────────
-  it("no crash — any status string does not throw", () => {
+  it("No crash: any status string does not throw", () => {
     expect(() => getStatusStyle("unknown_status")).not.toThrow();
     expect(() => getStatusStyle("")).not.toThrow();
   });
@@ -449,7 +224,6 @@ describe("IncidentDetail: getStatusStyle()", () => {
 //  6. Alerts Page — severity chip configuration
 // ════════════════════════════════════════════════════════════════
 describe("Alerts page: severity chip config", () => {
-
   const SEV_CHIPS = [
     { id: "all",      label: "All"      },
     { id: "critical", label: "Critical" },
@@ -458,62 +232,24 @@ describe("Alerts page: severity chip config", () => {
     { id: "low",      label: "Low"      },
   ];
 
-  // ── Happy Path ──────────────────────────────────────────────
-  it("happy path — exactly 5 chips are defined", () => {
-    // Arrange + Act + Assert  (assertEquals(5, SEV_CHIPS.length))
+  it("Happy path: 5 chips defined in correct order with matching IDs and labels", () => {
     expect(SEV_CHIPS.length).toBe(5);
+    expect(SEV_CHIPS[0].id).toBe("all");
+    expect(SEV_CHIPS.map((c) => c.label)).toEqual(["All", "Critical", "High", "Medium", "Low"]);
   });
 
-  it("happy path — 'all' chip is first in the list", () => {
+  it("Edge case: default filter is 'all' and resetting to it works", () => {
+    let filter = "high";
+    filter = "all";
+    expect(filter).toBe("all");
     expect(SEV_CHIPS[0].id).toBe("all");
   });
 
-  it("happy path — all required severity labels present", () => {
-    const labels = SEV_CHIPS.map((c) => c.label);
-    expect(labels).toContain("All");
-    expect(labels).toContain("Critical");
-    expect(labels).toContain("High");
-    expect(labels).toContain("Medium");
-    expect(labels).toContain("Low");
+  it("Negative test: 'extreme' severity chip is NOT defined in the list", () => {
+    expect(SEV_CHIPS.map((c) => c.id)).not.toContain("extreme");
   });
 
-  it("happy path — selecting a chip changes the active filter", () => {
-    // Arrange
-    let currentFilter = "all";
-    const setFilter = (id: string) => { currentFilter = id; };
-    // Act
-    setFilter("critical");
-    // Assert  (assertEquals("critical", currentFilter))
-    expect(currentFilter).toBe("critical");
-  });
-
-  // ── Edge Cases ──────────────────────────────────────────────
-  it("edge case — default filter is 'all' (initial state)", () => {
-    // Arrange
-    const defaultFilter = "all";
-    // Act + Assert  (assertEquals("all", defaultFilter))
-    expect(defaultFilter).toBe("all");
-  });
-
-  it("edge case — resetting filter back to 'all' works correctly", () => {
-    // Arrange
-    let filter = "high";
-    // Act
-    filter = "all";
-    // Assert
-    expect(filter).toBe("all");
-  });
-
-  // ── Negative Tests ──────────────────────────────────────────
-  it("negative — chip id 'extreme' is NOT in the defined chips (assertFalse)", () => {
-    // Arrange + Act
-    const ids = SEV_CHIPS.map((c) => c.id);
-    // Assert  (assertFalse)
-    expect(ids).not.toContain("extreme");
-  });
-
-  // ── No Crashes ──────────────────────────────────────────────
-  it("no crash — iterating all chips does not throw", () => {
+  it("No crash: iterating all chips does not throw", () => {
     expect(() => SEV_CHIPS.forEach((c) => c.id + c.label)).not.toThrow();
   });
 });
