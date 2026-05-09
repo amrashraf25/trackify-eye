@@ -13,7 +13,7 @@ import {
   buildPunctualityAlert,
   filterAlertsByStaff,
   PunctualityAlert,
-} from "../src/components/StaffPunctualityAlerts";
+} from "./feature_files/StaffPunctualityAlerts";
 
 function offsetDate(base: Date, offsetSeconds: number): Date {
   return new Date(base.getTime() + offsetSeconds * 1000);

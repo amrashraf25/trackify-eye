@@ -8,7 +8,7 @@ import {
   filterByStatus,
   FightAlert,
   ClearNotification,
-} from "../src/components/FightAlertAutoClear";
+} from "./feature_files/FightAlertAutoClear";
 
 // ─── TEST DATA ─────────────────────────────────────────────────────────────────
 
